@@ -14,23 +14,33 @@
         <header>
             <h1>🍿 Film Gurmesi</h1>
             
-            <!-- KULLANICI ALANI -->
-            <div id="authSection" style="margin-top: 20px;">
+            <div id="authSection" style="margin-top: 20px; position: relative;">
+                
                 <a id="loginBtn" href="/auth/login" class="auth-btn google-btn">
                     <i class="fab fa-google"></i> Google ile Giriş Yap
                 </a>
 
-                <div id="userProfile" style="display: none; align-items: center; justify-content: center; gap: 10px;">
-                    <img id="userAvatar" src="" alt="Avatar" style="width: 40px; border-radius: 50%; border: 2px solid #e94560;">
-                    <span id="userName" style="font-weight: bold;"></span>
-                    <button onclick="cikisYap()" class="auth-btn logout-btn">Çıkış</button>
-                </div>
+                <div id="userProfile" style="display: none;">
+                    </div>
+
             </div>
         </header>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Film adı yazın (Örn: Matrix)...">
-            <button onclick="filmAra()"><i class="fas fa-search"></i> Ara</button>
+            <input type="text" id="searchInput" placeholder="Film veya Dizi adı...">
+            
+            <select id="typeSelect">
+                <option value="movie">🎬 Film</option>
+                <option value="tv">📺 Dizi</option>
+            </select>
+
+            <select id="sortSelect">
+                <option value="yok">Sıralama Yok</option>
+                <option value="puan_azalan">⭐ Puan (Yüksek)</option>
+                <option value="puan_artan">⭐ Puan (Düşük)</option>
+            </select>
+
+            <button onclick="filmAra()" class="search-btn"><i class="fas fa-search"></i> Bul</button>
         </div>
 
         <div class="content-grid">
@@ -40,13 +50,6 @@
                 <div id="resultsContainer" class="cards-grid">
                 </div>
             </div>
-
-            <div class="watchlist-section">
-                <h2>📝 İzlenecekler Listem</h2>
-                <div id="watchlistContainer" class="list-group">
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -60,10 +63,21 @@
             <div class="modal-info">
                 <h2 id="modalTitle">Film Başlığı</h2>
                 <p class="tagline" id="modalTagline">Slogan buraya</p>
+                
+                <div id="modalPlatforms" style="margin-bottom: 15px;"></div>
+
                 <div class="meta-data">
                     <span id="modalRating">⭐ 8.5</span>
                     <span id="modalRuntime">🕒 120 dk</span>
+                    <a id="modalImdb" href="#" target="_blank" class="imdb-badge">IMDb</a>
                 </div>
+
+                <div style="margin: 15px 0; font-size: 0.9em; color: #ddd;">
+                    <p><strong>🎭 Tür:</strong> <span id="modalGenres"></span></p>
+                    <p><strong>🎬 Yönetmen:</strong> <span id="modalDirector"></span></p>
+                    <p><strong>🌟 Oyuncular:</strong> <span id="modalCast"></span></p>
+                </div>
+
                 <p id="modalOverview" class="overview-text">Film özeti...</p>
             </div>
         </div>
