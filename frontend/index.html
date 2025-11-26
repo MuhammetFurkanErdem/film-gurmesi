@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Gurmesi</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🍿 Film Gurmesi</h1>
+            
+            <!-- KULLANICI ALANI -->
+            <div id="authSection" style="margin-top: 20px;">
+                <a id="loginBtn" href="http://127.0.0.1:8000/auth/login" class="auth-btn google-btn">
+                    <i class="fab fa-google"></i> Google ile Giriş Yap
+                </a>
+
+                <div id="userProfile" style="display: none; align-items: center; justify-content: center; gap: 10px;">
+                    <img id="userAvatar" src="" alt="Avatar" style="width: 40px; border-radius: 50%; border: 2px solid #e94560;">
+                    <span id="userName" style="font-weight: bold;"></span>
+                    <button onclick="cikisYap()" class="auth-btn logout-btn">Çıkış</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Film adı yazın (Örn: Matrix)...">
+            <button onclick="filmAra()"><i class="fas fa-search"></i> Ara</button>
+        </div>
+
+        <div class="content-grid">
+            
+            <div class="results-section">
+                <h2>🔍 Arama Sonuçları</h2>
+                <div id="resultsContainer" class="cards-grid">
+                </div>
+            </div>
+
+            <div class="watchlist-section">
+                <h2>📝 İzlenecekler Listem</h2>
+                <div id="watchlistContainer" class="list-group">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="movieModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="modalKapat()">&times;</span>
+            
+            <div class="video-container" id="modalVideo"></div>
+
+            <div class="modal-info">
+                <h2 id="modalTitle">Film Başlığı</h2>
+                <p class="tagline" id="modalTagline">Slogan buraya</p>
+                <div class="meta-data">
+                    <span id="modalRating">⭐ 8.5</span>
+                    <span id="modalRuntime">🕒 120 dk</span>
+                </div>
+                <p id="modalOverview" class="overview-text">Film özeti...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="app.js"></script>
+</body>
+</html>
