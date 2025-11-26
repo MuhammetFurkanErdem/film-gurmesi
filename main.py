@@ -305,4 +305,6 @@ def durum_guncelle(film_id: int, veri: DurumGuncelle, request: Request, db: Sess
         
     db.commit()
     return {"mesaj": "Güncellendi"}
+
+    # Sürüm v2.0 - Render Guncelleme Kontrolü
  
