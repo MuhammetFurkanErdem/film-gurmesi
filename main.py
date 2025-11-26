@@ -105,8 +105,11 @@ def read_root():
 
 @app.get("/auth/login")
 async def login(request: Request):
-    # URL'in sonundaki slash'lere dikkat et
-    redirect_uri = "http://127.0.0.1:8000/auth/google/callback"
+    redirect_uri = str(request.url_for('auth_google'))
+    
+    if "onrender.com" in redirect_uri:
+        redirect_uri = redirect_uri.replace("http://", "https://")
+        
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/auth/google/callback")
@@ -116,10 +119,11 @@ async def auth_google(request: Request):
         user = token.get('userinfo')
         if user:
             request.session['user'] = dict(user)
-        return RedirectResponse(url="http://127.0.0.1:8000/uygulama/index.html")
+        # Burayı da dinamik yaptık: Sadece klasör yolunu verdik
+        return RedirectResponse(url="/uygulama/index.html")
     except Exception as e:
         return JSONResponse(content={"error": "Giriş Hatası", "detay": str(e)}, status_code=500)
-
+        
 @app.get("/auth/logout")
 async def logout(request: Request):
     request.session.clear()
