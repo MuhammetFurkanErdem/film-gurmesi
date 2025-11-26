@@ -16,8 +16,9 @@ body {
 header {
     position: relative; /* Referans noktası burası */
     text-align: center; /* Başlığı ortaya alır */
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     padding-top: 10px;
+    /* Eğer başlık ve profil çok sıkışık durursa buraya biraz padding-right ekleyebilirsin */
 }
 
 header h1 {
@@ -49,33 +50,42 @@ header h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 15px;
-    border-radius: 50px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    gap: 10px; /* Elemanlar birbirine daha yakın olsun */
+    margin-bottom: 50px;
+    
+    /* Tek parça kapsayıcı görünümü */
+    background: rgba(22, 33, 62, 0.85); /* Daha koyu, yarı saydam */
+    padding: 10px;
+    border-radius: 100px; /* Tam yuvarlak hap şekli */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* İnce çerçeve */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5); /* Derinlik gölgesi */
+    backdrop-filter: blur(20px);
     
     width: 90%; 
-    max-width: 1000px; 
+    max-width: 900px; 
     margin-left: auto; 
     margin-right: auto;
+    transition: 0.3s;
+}
+
+.search-box:hover {
+    border-color: rgba(233, 69, 96, 0.5);
+    box-shadow: 0 20px 50px rgba(233, 69, 96, 0.15);
 }
 
 input {
-    flex-grow: 1; /* Boş alanın tamamını kaplasın */
-    padding: 12px 20px;
-    /* width: 300px;  <-- BUNU SİLİYORUZ, ARTIK ESNEK OLACAK */
-    border-radius: 25px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0, 0, 0, 0.2);
+    flex-grow: 1; 
+    padding: 15px 25px;
+    border-radius: 50px;
+    border: none; /* Çerçeveyi kaldırdık, temiz görünüm */
+    background: transparent; /* Arka plan yok, kapsayıcıyı kullansın */
     color: white;
-    font-size: 1.1em;
+    font-size: 1.2em;
     outline: none;
-    transition: 0.3s;
-    min-width: 200px; /* Çok küçülmesini engelle */
+    min-width: 150px; 
 }
+input::placeholder { color: #aaa; }
+
 input:focus {
     background: rgba(0, 0, 0, 0.4);
     border-color: #e94560;
@@ -83,52 +93,67 @@ input:focus {
 
 select {
     padding: 12px 20px;
-    border-radius: 25px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: #16213e;
-    color: white;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #0f3460; /* Buton gibi dursun */
+    color: #eee;
     font-size: 0.95em;
     cursor: pointer;
     outline: none;
     text-align: center;
+    transition: 0.3s;
+    font-weight: 600;
 }
-select:hover { border-color: #e94560; }
+select:hover { 
+    background: #1a1a2e; 
+    color: #e94560;
+}
 
 .search-btn {
-    padding: 12px 30px;
-    border-radius: 25px;
+    padding: 15px 40px;
+    border-radius: 50px;
     border: none;
-    background: linear-gradient(45deg, #e94560, #ff6b81);
+    /* Neon kırmızı gradyan */
+    background: linear-gradient(135deg, #e94560 0%, #ff2e63 100%);
     color: white;
-    font-weight: bold;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
     font-size: 1em;
     transition: 0.3s;
-    box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+    box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
 }
-.search-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.6); }
+.search-btn:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 10px 30px rgba(233, 69, 96, 0.6); 
+}
 
 /* --- 4. ANA İÇERİK IZGARASI --- */
 .content-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr; /* Sol geniş, sağ dar */
-    gap: 30px;
+    display: block; /* Izgara yerine blok yapıyoruz, tam genişlik olsun */
+    width: 100%;
 }
 
-/* Mobilde tek sütun olsun */
 @media (max-width: 768px) {
-    .content-grid { grid-template-columns: 1fr; }
-    .search-box { flex-direction: column; border-radius: 20px; width: 90%; }
-    input { width: 100%; }
+    .search-box {
+        flex-direction: column;
+        border-radius: 30px; /* Mobilde daha az yuvarlak */
+        padding: 20px;
+        gap: 15px;
+    }
+    input, select, .search-btn { width: 100%; text-align: center; }
+    input { background: rgba(0,0,0,0.2); } /* Mobilde input belli olsun */
 }
 
 /* --- 5. KART TASARIMI (FİLM KUTULARI) --- */
 /* --- KART IZGARASI (DÜZENLENDİ) --- */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Kart genişliğini biraz arttırdık (200->220) */
-    gap: 30px; /* Kartlar arası boşluğu açtık (Çakışmayı önler) */
-    align-items: start; /* Kartları yukarı hizala */
+    /* 220px yerine 300px yaptık ki kartlar büyüsün ve satıra 3 tane sığsın */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 30px;
+    align-items: start;
 }
 
 /* --- KART TASARIMI (DÜZENLENDİ) --- */
@@ -375,10 +400,11 @@ select:hover { border-color: #e94560; }
 }
 
 #authSection {
-    position: absolute; /* Sayfa akışından çık */
-    top: 10px;   /* Tepeden 10px aşağı */
-    right: 0;    /* En sağa yapış */
-    z-index: 2000;
+    position: absolute;  /* Başlıktan bağımsız hareket etmesini sağlar */
+    right: 0;            /* En sağa yapıştır */
+    top: 65%;            /* Dikeyde ortala */
+    transform: translateY(-50%); /* Tam ortalamak için ince ayar */
+    z-index: 2000;       /* Diğer öğelerin üstünde kalsın */
 }
 
 .user-avatar {
@@ -441,13 +467,231 @@ select:hover { border-color: #e94560; }
     display: block;
 }
 
+
+/* --- İSTATİSTİK PANELİ (DASHBOARD) --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.dash-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 25px;
+    border-radius: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.dash-card:hover {
+    transform: translateY(-5px);
+    border-color: #e94560;
+}
+
+.dash-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #e94560;
+    opacity: 0.8;
+}
+
+.dash-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    margin: 5px 0;
+}
+
+.dash-label {
+    color: #aaa;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* --- PUANLAMA MODALI --- */
+.rating-form {
+    padding: 10px;
+    text-align: center;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.rating-select {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+    background-color: #1a1a2e; /* Koyu lacivert */
+    color: #ffd700; /* Altın sarısı yazı */
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    outline: none;
+    appearance: none; /* Varsayılan ok işaretini kaldırır (daha temiz görünüm) */
+    
+    /* Özel Ok İşareti Ekleyelim */
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e94560%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 12px auto;
+    
+    transition: all 0.3s ease;
+}
+
+.rating-select:hover, .rating-select:focus {
+    border-color: #e94560; /* Tıklayınca kırmızı çerçeve */
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.2);
+}
+
+/* İçindeki seçeneklerin arka planı */
+.rating-select option {
+    background-color: #16213e;
+    color: white;
+    padding: 10px;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 15px;
+    color: white;
+    font-family: inherit;
+    resize: none;
+    margin-bottom: 20px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #e94560;
+}
+
+/* --- YENİ YILDIZLI PUANLAMA SİSTEMİ --- */
+.star-rating-wrapper {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.stars-container {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.s-item {
+    font-size: 1.5rem; 
+    color: #444; 
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+    
+    /* YENİ EKLENENLER: Tıklamayı garantiye alır */
+    position: relative;
+    z-index: 50; 
+    pointer-events: auto;
+}
+
+.s-item:hover {
+    transform: scale(1.2); /* Üzerine gelince büyüsün */
+}
+
+/* Aktif (Sarı) Yıldız Rengi */
+.s-item.active {
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.rating-text-display {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #e94560; /* Tema kırmızısı */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+}
+
+/* --- ŞANSLI BUTON (RANDOM) --- */
+.random-btn {
+    background: linear-gradient(45deg, #FF512F 0%, #DD2476 100%);
+    color: white;
+    margin-left: 10px;
+    box-shadow: 0 4px 15px rgba(221, 36, 118, 0.4);
+    border: none;
+
+    /* --- Hizalama ve Boyut Ayarları --- */
+    padding: 10px 20px;       /* Diğer butonla birebir aynı iç boşluk */
+    font-size: 1rem;          /* Yazı boyutu eşitlensin */
+    display: inline-flex;     /* Kutu yapısını esnek yap */
+    align-items: center;      /* Yazı ve ikonu dikeyde ortala */
+    justify-content: center;  /* Yatayda ortala */
+    gap: 8px;                 /* İkon ile yazı arasına eşit boşluk koy */
+    vertical-align: middle;   /* Yanındaki butonla aynı çizgide dursun */
+    height: 44px;             /* Yüksekliği sabitleyelim ki şaşmasın */
+    position: relative;
+    top: -3px;
+}
+
+.random-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(221, 36, 118, 0.6);
+    background: linear-gradient(45deg, #DD2476 0%, #FF512F 100%);
+}
+
+/* --- MOBİL UYUMLULUK AYARLARI --- */
 @media (max-width: 768px) {
+    
+    /* 1. Header Düzeni: Alt alta gelsin */
     header {
-        flex-direction: column; 
-        gap: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 30px;
     }
+
+    /* 2. Başlık Boyutu: Mobilde devasa olmasın */
+    header h1 {
+        font-size: 2.5em; /* 3.5em yerine daha kibar */
+        line-height: 1.2;
+    }
+
+    /* 3. Buton Grubu: Sabitlemeyi kaldır, akışa bırak */
     #authSection {
-        position: static;
-        margin-top: 10px;
+        position: static; /* Absolute iptal */
+        transform: none;  /* Transform iptal */
+        margin-top: 15px; /* Başlıkla arasına boşluk */
+        
+        display: flex;
+        flex-direction: column; /* Butonları alt alta diz (Yan yana sığmayabilir) */
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    /* Butonlar mobilde tam genişlikte olsun (Daha kolay tıklanır) */
+    .auth-btn, .random-btn {
+        width: 100%; 
+        max-width: 300px; /* Çok da uzamasın */
+        justify-content: center; /* İkon ve yazıyı ortala */
+        margin: 0 !important; /* Varsa sol-sağ marjini sıfırla */
+    }
+
+    /* 4. Modal Genişliği: Mobilde ekranı daha çok kaplasın */
+    .modal-content {
+        width: 95%; /* %80 yerine %95 */
+        margin: 10% auto; /* Üstten biraz daha boşluk */
     }
 }

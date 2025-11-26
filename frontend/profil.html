@@ -12,11 +12,38 @@
     <div class="container">
         <header>
             <h1>👤 Profilim</h1>
-            <a href="index.html" class="auth-btn google-btn" style="margin-top: 20px;">
-                <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
-            </a>
+            
+            <div style="margin-top: 20px;">
+                <a href="index.html" class="auth-btn google-btn">
+                    <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+                </a>
+        
+                <button onclick="rastgeleOner()" class="auth-btn random-btn">
+                    <i class="fas fa-dice"></i> Ne İzlesem?
+                </button>
+            </div>
         </header>
         
+        <div class="dashboard-grid">
+            <div class="dash-card">
+                <div class="dash-icon"><i class="fas fa-check-double"></i></div>
+                <div class="dash-number" id="statWatched">0</div>
+                <div class="dash-label">Toplam İzlenen</div>
+            </div>
+        
+            <div class="dash-card">
+                <div class="dash-icon"><i class="fas fa-clock"></i></div>
+                <div class="dash-number" id="statPending">0</div>
+                <div class="dash-label">İzlenecek</div>
+            </div>
+        
+            <div class="dash-card">
+                <div class="dash-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="dash-number" id="statType" style="font-size: 1.5rem; line-height: 1.5;">Analiz<br>Bekleniyor</div>
+                <div class="dash-label">Favori Format</div>
+            </div>
+        </div>
+
         <div class="watchlist-section" style="max-width: 800px; margin: 0 auto;">
             <h2 style="text-align: center; margin-bottom: 30px;">📝 İzlenecekler Listem</h2>
             <div id="watchlistContainer" class="list-group">
@@ -28,5 +55,109 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
+
+    <div id="personalModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 25px;">
+            <span class="close-btn" onclick="personalModalKapat()">&times;</span>
+            
+            <div class="modal-info">
+                <h2 id="pTitle" style="color: #e94560; margin-bottom: 5px;">Film Başlığı</h2>
+                <p style="color: #aaa; font-size: 0.9em; margin-bottom: 25px;">İzleme Kartın</p>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 1px;">Senin Puanın</div>
+                    <div style="margin-top: 10px;">
+                        <span id="pScore" style="font-size: 3.5em; font-weight: 800; color: #ffd700;">-</span>
+                        <span style="font-size: 1.2em; color: #666; font-weight: bold;">/10</span>
+                    </div>
+                </div>
+
+                <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border-left: 4px solid #e94560;">
+                    <div style="font-size: 0.85em; color: #e94560; font-weight: bold; margin-bottom: 8px;">
+                        <i class="fas fa-quote-left"></i> NOTLARIN
+                    </div>
+                    <p id="pReview" style="font-style: italic; color: #ddd; margin: 0; line-height: 1.5; min-height: 40px;">
+                        Henüz yorum yapmamışsın.
+                    </p>
+                </div>
+
+                <button onclick="personalModalKapat()" class="search-btn" style="margin-top: 25px; width: 100%;">
+                    Tamam
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ratingModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-btn" onclick="ratingModalKapat()">&times;</span>
+            
+            <div class="modal-info" style="text-align: center;">
+                <h2 style="color: #e94560;">🎬 Filmi Değerlendir</h2>
+                <p style="color: #ccc; margin-bottom: 20px;">Bu yapımı izledin! Nasıl buldun?</p>
+
+                <div class="rating-form">
+                    <input type="hidden" id="ratingFilmId">
+                    
+                    <label style="display: block; margin-bottom: 10px; color:#aaa;">Puanın:</label>
+                    <input type="hidden" id="userRating" value="10">
+
+                    <div class="star-rating-wrapper">
+                        <div class="stars-container">
+                            <i class="fas fa-star s-item active" data-value="1" onclick="yildizSec(1)"></i>
+                            <i class="fas fa-star s-item active" data-value="2" onclick="yildizSec(2)"></i>
+                            <i class="fas fa-star s-item active" data-value="3" onclick="yildizSec(3)"></i>
+                            <i class="fas fa-star s-item active" data-value="4" onclick="yildizSec(4)"></i>
+                            <i class="fas fa-star s-item active" data-value="5" onclick="yildizSec(5)"></i>
+                            <i class="fas fa-star s-item active" data-value="6" onclick="yildizSec(6)"></i>
+                            <i class="fas fa-star s-item active" data-value="7" onclick="yildizSec(7)"></i>
+                            <i class="fas fa-star s-item active" data-value="8" onclick="yildizSec(8)"></i>
+                            <i class="fas fa-star s-item active" data-value="9" onclick="yildizSec(9)"></i>
+                            <i class="fas fa-star s-item active" data-value="10" onclick="yildizSec(10)"></i>
+                        </div>
+                        <div id="ratingText" class="rating-text-display">10 - Efsane</div>
+                    </div>
+
+                    <br>
+
+                    <label style="display: block; margin-bottom: 10px;">Düşüncelerin (İsteğe bağlı)</label>
+                    <textarea id="userReview" placeholder="Bu film hakkında ne düşünüyorsun?"></textarea>
+
+                    <button onclick="incelemeyiKaydet()" class="search-btn" style="width: 100%;">
+                        💾 Kaydet ve Bitir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="movieModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="modalKapat()">&times;</span>
+            
+            <div class="video-container" id="modalVideo"></div>
+
+            <div class="modal-info">
+                <h2 id="modalTitle">Film Başlığı</h2>
+                <p class="tagline" id="modalTagline">Slogan buraya</p>
+                
+                <div id="modalPlatforms" style="margin-bottom: 15px;"></div>
+
+                <div class="meta-data">
+                    <span id="modalRating">⭐ 8.5</span>
+                    <span id="modalRuntime">🕒 120 dk</span>
+                    <a id="modalImdb" href="#" target="_blank" class="imdb-badge">IMDb</a>
+                </div>
+
+                <div style="margin: 15px 0; font-size: 0.9em; color: #ddd;">
+                    <p><strong>🎭 Tür:</strong> <span id="modalGenres"></span></p>
+                    <p><strong>🎬 Yönetmen:</strong> <span id="modalDirector"></span></p>
+                    <p><strong>🌟 Oyuncular:</strong> <span id="modalCast"></span></p>
+                </div>
+
+                <p id="modalOverview" class="overview-text">Film özeti...</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
