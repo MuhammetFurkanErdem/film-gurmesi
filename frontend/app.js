@@ -188,13 +188,32 @@ async function listedenSil(id) {
 
 // --- EKLEME ---
 async function listeyeEkle(tmdb_id, tur, ad, puan, poster) {
-    const res = await fetch(`${API_URL}/ekle`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tmdb_id, tur, ad, puan, poster })
-    });
-    if (res.ok) { bildirimGoster("✅ Eklendi!"); listeyiGetir(); }
-    else if (res.status === 401) bildirimGoster("⚠️ Giriş yapmalısın!", "hata");
-    else bildirimGoster("Hata!", "hata");
+    const filmVerisi = { tmdb_id: tmdb_id, tur: tur, ad: ad, puan: puan, poster: poster };
+
+    try {
+        const res = await fetch(`${API_URL}/ekle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(filmVerisi)
+        });
+        
+        const data = await res.json(); 
+
+        if (res.ok) {
+            if (data.mesaj === "Zaten ekli") {
+                bildirimGoster("⚠️ Bu içerik zaten listende var!", "hata");
+            } else {
+                bildirimGoster("✅ " + ad + " listene eklendi!");
+                listeyiGetir();
+            }
+        } else if (res.status === 401) {
+            bildirimGoster("⚠️ Önce giriş yapmalısın!", "hata");
+        } else {
+            bildirimGoster("Bir hata oluştu!", "hata");
+        }
+    } catch (error) {
+        console.error("Ekleme hatası:", error);
+    }
 }
 
 // --- YILDIZ PUANLAMA SİSTEMİ (EN ALTA ALDIM VE ÇAKIŞMAYI GİDERDİM) ---

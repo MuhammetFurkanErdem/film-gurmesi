@@ -253,6 +253,16 @@ def film_detay(tmdb_id: int, tur: str = "movie"): # <--- 'tur' parametresi eklen
 @app.post("/ekle")
 def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
+    
+    mevcut_film = db.query(FilmDB).filter(
+        FilmDB.user_email == user['email'],
+        FilmDB.tmdb_id == film.tmdb_id,
+        FilmDB.tur == film.tur
+    ).first()
+
+    if mevcut_film:
+        return {"mesaj": "Zaten ekli"}
+
     yeni_film = FilmDB(
         user_email=user['email'],
         tmdb_id=film.tmdb_id,
@@ -261,8 +271,8 @@ def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
         puan=film.puan, 
         poster=film.poster,
         izlendi="Hayır",
-        kisisel_puan=0,  # Varsayılan
-        kisisel_yorum="" # Varsayılan
+        kisisel_puan=0, 
+        kisisel_yorum="" 
     )
     db.add(yeni_film)
     db.commit()
