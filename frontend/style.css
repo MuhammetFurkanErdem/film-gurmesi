@@ -651,47 +651,98 @@ textarea:focus {
     background: linear-gradient(45deg, #DD2476 0%, #FF512F 100%);
 }
 
-/* --- MOBİL UYUMLULUK AYARLARI --- */
+/* --- MOBİL UYUMLULUK VE DÜZENLEMELER (EN ALTA EKLE) --- */
 @media (max-width: 768px) {
-    
-    /* 1. Header Düzeni: Alt alta gelsin */
+
+    /* 1. Header ve Başlık Düzeni */
     header {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
+        padding-top: 20px;
     }
 
-    /* 2. Başlık Boyutu: Mobilde devasa olmasın */
     header h1 {
-        font-size: 2.5em; /* 3.5em yerine daha kibar */
+        font-size: 2.2em; /* Başlığı mobilde biraz küçültelim */
         line-height: 1.2;
+        margin-bottom: 15px;
     }
 
-    /* 3. Buton Grubu: Sabitlemeyi kaldır, akışa bırak */
-    #authSection {
-        position: static; /* Absolute iptal */
-        transform: none;  /* Transform iptal */
-        margin-top: 15px; /* Başlıkla arasına boşluk */
-        
-        display: flex;
-        flex-direction: column; /* Butonları alt alta diz (Yan yana sığmayabilir) */
-        align-items: center;
-        gap: 10px;
+    /* 2. Buton Grubu (Giriş, Çıkış, Profil, Ne İzlesem) */
+    /* Hem #authSection (Ana sayfa) hem de Profil sayfasındaki buton div'i için */
+    #authSection, header > div {
+        position: static; /* Sabitlemeyi iptal et */
+        transform: none;
         width: 100%;
+        display: flex;
+        flex-direction: column; /* Butonları alt alta diz */
+        align-items: center;
+        gap: 12px; /* Butonlar arası boşluk */
+        margin-top: 10px;
     }
 
-    /* Butonlar mobilde tam genişlikte olsun (Daha kolay tıklanır) */
-    .auth-btn, .random-btn {
-        width: 100%; 
-        max-width: 300px; /* Çok da uzamasın */
-        justify-content: center; /* İkon ve yazıyı ortala */
-        margin: 0 !important; /* Varsa sol-sağ marjini sıfırla */
+    /* Tüm butonları tam genişlik yapıp ortalayalım */
+    .auth-btn, .random-btn, .google-btn {
+        width: 85%; /* Ekranın %85'ini kaplasın */
+        max-width: 350px;
+        justify-content: center; /* Yazıyı ortala */
+        margin: 0 !important; /* Varsa dış boşlukları sıfırla */
+        height: 45px; /* Standart yükseklik */
+        font-size: 1rem;
     }
 
-    /* 4. Modal Genişliği: Mobilde ekranı daha çok kaplasın */
+    /* Profil Menüsü (Avatar) Mobilde */
+    .user-menu-container {
+        margin-top: 10px;
+    }
+    
+    .dropdown-content {
+        position: relative; /* Mobilde avatarın altına itelim, havada durmasın */
+        top: 10px;
+        width: 100%;
+        min-width: 250px;
+        text-align: center;
+    }
+
+    /* 3. Arama Kutusu */
+    .search-box {
+        flex-direction: column;
+        width: 90%;
+        padding: 20px;
+        gap: 15px;
+        border-radius: 30px;
+    }
+    
+    input, select, .search-btn {
+        width: 100%;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    /* 4. Kartlar ve İstatistikler */
+    .cards-grid, .dashboard-grid {
+        grid-template-columns: 1fr; /* Tek sütun olsun */
+        padding: 0 10px;
+    }
+
+    .card, .dash-card {
+        width: 100%; /* Kartlar tam genişlik */
+        box-sizing: border-box; /* Padding taşmasın */
+    }
+
+    /* 5. Modallar (Pencereler) */
     .modal-content {
-        width: 95%; /* %80 yerine %95 */
-        margin: 10% auto; /* Üstten biraz daha boşluk */
+        width: 90%; /* Ekranı doldursun */
+        margin: 15% auto; /* Üstten boşluk */
+        padding: 0;
+    }
+
+    .modal-info {
+        padding: 20px;
+    }
+
+    .platform-container {
+        justify-content: center;
     }
 }
