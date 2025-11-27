@@ -18,29 +18,49 @@ async function kullaniciKontrol() {
     try {
         const res = await fetch(`${API_URL}/user_info`);
         const user = await res.json();
-        // ... (Eski kodlar aynı kalacak: loginBtn, userProfile işlemleri vs.) ...
+        const loginBtn = document.getElementById("loginBtn");
+        const userProfile = document.getElementById("userProfile");
 
         if (user) {
-            // ... (Profil resmi vs. işlemleri aynı) ...
+            if(loginBtn) loginBtn.style.display = "none";
+            if(userProfile) {
+                userProfile.style.display = "block";
+                userProfile.innerHTML = `
+                    <div class="user-menu-container" onclick="menuyuAcKapat()">
+                        <img src="${user.picture}" class="user-avatar" alt="Profil">
+                        <div id="myDropdown" class="dropdown-content">
+                            <div style="padding: 10px; font-size: 0.8em; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                ${user.name}
+                            </div>
+                            <a href="profil.html"><i class="fas fa-user"></i> Profilim</a>
+                            <a href="#" onclick="cikisYap()"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+                        </div>
+                    </div>`;
+            }
             
-            // --- YENİ EKLENEN KISIM BAŞLANGIÇ ---
-            // Eğer ana sayfadaysak (resultsContainer varsa) ÖNERİLERİ GETİR
+            // --- ANA SAYFADAYSA ÖNERİLERİ GETİR ---
             if (document.getElementById("resultsContainer")) {
                 onerileriGetir();
             }
-            // --- YENİ EKLENEN KISIM BİTİŞ ---
 
             if (typeof listeyiGetir === "function" && document.getElementById("watchlistContainer")) {
                 listeyiGetir();
             }
         } else {
-            // Kullanıcı yoksa da popülerleri gösterebiliriz
+            if(loginBtn) loginBtn.style.display = "inline-block";
+            if(userProfile) userProfile.style.display = "none";
+            
+            // KULLANICI YOKSA DA POPÜLERLERİ GETİR
             if (document.getElementById("resultsContainer")) {
                 onerileriGetir();
             }
-            // ... (Eski kodlar aynı) ...
         }
     } catch (error) { console.error("Kullanıcı kontrolü hatası:", error); }
+}
+
+async function cikisYap() {
+    await fetch(`${API_URL}/auth/logout`);
+    window.location.reload();
 }
 
 // --- ARAMA İŞLEMLERİ ---
@@ -177,37 +197,30 @@ async function listedenSil(id) {
     }
 }
 
-// --- EKLEME ---
+// --- EKLEME (GÜNCELLENMİŞ: ZATEN EKLİ KONTROLÜ) ---
 async function listeyeEkle(tmdb_id, tur, ad, puan, poster) {
-    const filmVerisi = { tmdb_id: tmdb_id, tur: tur, ad: ad, puan: puan, poster: poster };
+    const res = await fetch(`${API_URL}/ekle`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tmdb_id, tur, ad, puan, poster })
+    });
+    
+    const data = await res.json(); // Mesajı al
 
-    try {
-        const res = await fetch(`${API_URL}/ekle`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(filmVerisi)
-        });
-        
-        const data = await res.json(); 
-
-        if (res.ok) {
-            if (data.mesaj === "Zaten ekli") {
-                bildirimGoster("⚠️ Bu içerik zaten listende var!", "hata");
-            } else {
-                bildirimGoster("✅ " + ad + " listene eklendi!");
-                listeyiGetir();
-            }
-        } else if (res.status === 401) {
-            bildirimGoster("⚠️ Önce giriş yapmalısın!", "hata");
+    if (res.ok) {
+        if (data.mesaj === "Zaten ekli") {
+            bildirimGoster("⚠️ Bu içerik zaten listende var!", "hata");
         } else {
-            bildirimGoster("Bir hata oluştu!", "hata");
+            bildirimGoster("✅ " + ad + " listene eklendi!");
+            listeyiGetir();
         }
-    } catch (error) {
-        console.error("Ekleme hatası:", error);
+    } else if (res.status === 401) {
+        bildirimGoster("⚠️ Önce giriş yapmalısın!", "hata");
+    } else {
+        bildirimGoster("Hata!", "hata");
     }
 }
 
-// --- YILDIZ PUANLAMA SİSTEMİ (EN ALTA ALDIM VE ÇAKIŞMAYI GİDERDİM) ---
+// --- YILDIZ PUANLAMA SİSTEMİ ---
 const puanMetinleri = {
     1: "Çöp", 2: "Berbat", 3: "Çok Kötü", 4: "Kötü", 5: "İdare Eder",
     6: "Ortalama", 7: "Güzel", 8: "İyi", 9: "Çok İyi", 10: "Efsane"
@@ -231,7 +244,7 @@ function yildizSec(puan) {
     });
 }
 
-// Fonksiyonu dışarı açıyoruz ki HTML'den çağrılabilsin
+// Fonksiyonu dışarı açıyoruz
 window.yildizSec = yildizSec;
 
 function izlemeDurumuKontrol(id, mevcutDurum) {
@@ -239,12 +252,10 @@ function izlemeDurumuKontrol(id, mevcutDurum) {
     else durumGuncelleAPI(id, "Hayır", 0, "");
 }
 
-// TEK VE DOĞRU MODAL AÇMA FONKSİYONU
 function ratingModalAc(id) {
     document.getElementById("ratingFilmId").value = id;
     document.getElementById("ratingModal").style.display = "block";
     
-    // Varsayılan olarak 10 puan seçili gelsin ve yıldızları boyasın
     yildizSec(10); 
     document.getElementById("userReview").value = "";
 }
@@ -329,12 +340,10 @@ document.getElementById("searchInput").addEventListener("keypress", function(eve
     if (event.key === "Enter") filmAra();
 });
 
-/* --- RASTGELE FİLM ÖNERİSİ --- */
+// --- RASTGELE FİLM ÖNERİSİ ---
 function rastgeleOner() {
-    // 1. Sadece İZLENMEMİŞ (Hayır) olanları filtrele
     const izlenmeyenler = tumFilmler.filter(f => f.izlendi !== "Evet");
     
-    // 2. Eğer izlenecek film kalmadıysa uyarı ver
     if (izlenmeyenler.length === 0) {
         return Swal.fire({
             title: 'Wow!',
@@ -344,11 +353,9 @@ function rastgeleOner() {
         });
     }
 
-    // 3. Rastgele bir sayı seç
     const rastgeleIndex = Math.floor(Math.random() * izlenmeyenler.length);
     const film = izlenmeyenler[rastgeleIndex];
 
-    // 4. Büyüleyici bir pencerede göster
     Swal.fire({
         title: '🎲 Günün Önerisi',
         html: `
@@ -369,11 +376,49 @@ function rastgeleOner() {
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
-            // Detay butonuna basarsa filmin detayını aç
             detayAc(film.tmdb_id, film.tur);
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-            // "Tekrar Dene" derse fonksiyonu yeniden çalıştır
             rastgeleOner();
         }
     });
+}
+
+// --- ANA SAYFA ÖNERİLERİ (SAYFA YÜKLENİNCE ÇAĞRILIR) ---
+async function onerileriGetir() {
+    const container = document.getElementById("resultsContainer");
+    const baslikAlani = document.querySelector(".results-section h2");
+    
+    container.innerHTML = '<p style="color:#aaa; width:100%; text-align:center;">Sizin için seçiliyor...</p>';
+
+    try {
+        const res = await fetch(`${API_URL}/oneriler`);
+        const data = await res.json();
+        
+        container.innerHTML = "";
+        
+        if(baslikAlani && data.baslik) {
+            baslikAlani.innerText = "✨ " + data.baslik;
+        }
+
+        data.sonuc.forEach(item => {
+            const posterUrl = item.poster ? item.poster : "https://via.placeholder.com/500x750?text=Resim+Yok";
+            const safeAd = item.ad.replace(/'/g, "\\'"); 
+            const rawType = item.tur === "Dizi" ? "tv" : "movie";
+
+            const html = `
+                <div class="card">
+                    <div style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.7); color:white; padding:3px 8px; border-radius:5px; font-size:0.8em; z-index:2;">${item.tur}</div>
+                    <img src="${posterUrl}" alt="${item.ad}">
+                    <h3>${item.ad}</h3>
+                    <p>⭐ ${item.puan.toFixed(1)}</p>
+                    <button class="detail-btn" onclick="detayAc(${item.tmdb_id}, '${rawType}')"><i class="fas fa-info-circle"></i> Detay</button>
+                    <button class="add-btn" onclick="listeyeEkle(${item.tmdb_id}, '${rawType}', '${safeAd}', ${item.puan}, '${posterUrl}')"><i class="fas fa-plus"></i> Listeme Ekle</button>
+                </div>`;
+            container.innerHTML += html;
+        });
+
+    } catch (error) {
+        console.error("Öneri hatası:", error);
+        container.innerHTML = "<p style='text-align:center'>Şu an öneri sunulamıyor.</p>";
+    }
 }

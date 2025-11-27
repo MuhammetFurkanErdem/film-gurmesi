@@ -1,5 +1,5 @@
 import os
-import random
+import random  # <--- BU EKLENDİ
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,11 +15,12 @@ from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
+# OAuthLib için HTTPS hatasını (lokalde) yoksay
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = FastAPI()
 
-
+# Session (Oturum) Ayarları
 app.add_middleware(
     SessionMiddleware, 
     secret_key=os.getenv("SECRET_KEY"),
@@ -28,6 +29,7 @@ app.add_middleware(
     max_age=3600          
 )
 
+# CORS Ayarları
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 3. KLASÖR BAĞLAMA ---
+# --- STATİK DOSYALAR (Frontend Bağlantısı) ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 frontend_path = os.path.join(current_dir, "frontend")
 
@@ -69,23 +71,31 @@ class FilmDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_email = Column(String)
     tmdb_id = Column(Integer)
-    tur = Column(String) # <--- YENİ: 'movie' veya 'tv' diye kaydedeceğiz
+    tur = Column(String) 
     ad = Column(String)
     puan = Column(Float)
     poster = Column(String)
     izlendi = Column(String, default="Hayır")
+    
+    # --- YENİ EKLENEN SÜTUNLAR ---
     kisisel_puan = Column(Integer, default=0)
     kisisel_yorum = Column(String, default="")
 
 Base.metadata.create_all(bind=engine)
 
-# --- MODELLER VE YARDIMCILAR ---
+# --- MODELLER ---
 class FilmEkle(BaseModel):
     tmdb_id: int
     tur: str
     ad: str
     puan: float
     poster: str = None
+
+# Güncelleme Modeli (Puan ve Yorum dahil)
+class DurumGuncelle(BaseModel):
+    izlendi: str = None
+    kisisel_puan: int = None
+    kisisel_yorum: str = None
 
 def get_db():
     db = SessionLocal()
@@ -97,9 +107,23 @@ def get_db():
 def get_current_user(request: Request):
     user = request.session.get('user')
     if not user:
-        # API isteği ise 401 dön, değilse hata fırlat
         raise HTTPException(status_code=401, detail="Oturum bulunamadı. Lütfen giriş yapın.")
     return user
+
+# --- YARDIMCI FONKSİYON ---
+def veri_isle(results, tur_tipi):
+    icerikler = []
+    for item in results:
+        baslik = item.get("title") or item.get("name")
+        puan = item.get("vote_average", 0)
+        icerikler.append({
+            "tmdb_id": item["id"],
+            "ad": baslik,
+            "puan": puan,
+            "tur": "Dizi" if tur_tipi == "tv" else "Film",
+            "poster": f"https://image.tmdb.org/t/p/w500{item['poster_path']}" if item.get('poster_path') else None
+        })
+    return icerikler
 
 # --- ENDPOINTLER ---
 
@@ -111,6 +135,7 @@ def read_root():
 async def login(request: Request):
     redirect_uri = str(request.url_for('auth_google'))
     
+    # Render HTTPS Düzeltmesi
     if "onrender.com" in redirect_uri:
         redirect_uri = redirect_uri.replace("http://", "https://")
         
@@ -123,7 +148,6 @@ async def auth_google(request: Request):
         user = token.get('userinfo')
         if user:
             request.session['user'] = dict(user)
-        # Burayı da dinamik yaptık: Sadece klasör yolunu verdik
         return RedirectResponse(url="/uygulama/index.html")
     except Exception as e:
         return JSONResponse(content={"error": "Giriş Hatası", "detay": str(e)}, status_code=500)
@@ -138,15 +162,11 @@ def user_info(request: Request):
     user = request.session.get('user')
     return user if user else None
 
-# --- FİLM & DİZİ ARAMA (GÜNCELLENDİ) ---
 @app.get("/search/{icerik_adi}")
 def search_content(icerik_adi: str, tur: str = "movie", sirala: str = "yok"):
-    # tur: 'movie' (Film) veya 'tv' (Dizi) olabilir
-    
     if not TMDB_API_KEY:
         return {"sonuc": []}
 
-    # Endpoint dinamik oldu: /search/movie veya /search/tv
     endpoint = f"{BASE_URL}/search/{tur}"
     params = {"api_key": TMDB_API_KEY, "query": icerik_adi, "language": "tr-TR"}
     
@@ -160,22 +180,17 @@ def search_content(icerik_adi: str, tur: str = "movie", sirala: str = "yok"):
 
     icerikler = []
     for item in data["results"]:
-        # Filmse 'title', Diziyse 'name' kullanılır. İkisini de kontrol et:
         baslik = item.get("title") or item.get("name")
-        
-        # Puan bazen boş gelebilir, 0 yapalım
         puan = item.get("vote_average", 0)
 
         icerikler.append({
             "tmdb_id": item["id"],
             "ad": baslik,
             "puan": puan,
-            # Dizi mi Film mi olduğunu da frontend'e söyleyelim
             "tur": "Dizi" if tur == "tv" else "Film",
             "poster": f"https://image.tmdb.org/t/p/w500{item['poster_path']}" if item.get('poster_path') else None
         })
 
-    # Sıralama Mantığı
     if sirala == "puan_azalan":
         icerikler = sorted(icerikler, key=lambda x: x['puan'], reverse=True)
     elif sirala == "puan_artan":
@@ -184,9 +199,7 @@ def search_content(icerik_adi: str, tur: str = "movie", sirala: str = "yok"):
     return {"sonuc": icerikler}
 
 @app.get("/detay/{tmdb_id}")
-def film_detay(tmdb_id: int, tur: str = "movie"): # <--- 'tur' parametresi eklendi
-    
-    # Endpoint dinamik oldu: /movie/123 veya /tv/123
+def film_detay(tmdb_id: int, tur: str = "movie"):
     endpoint = f"{BASE_URL}/{tur}/{tmdb_id}"
     params = {
         "api_key": TMDB_API_KEY, 
@@ -255,6 +268,7 @@ def film_detay(tmdb_id: int, tur: str = "movie"): # <--- 'tur' parametresi eklen
 def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
     
+    # --- 1. KONTROL: Bu film zaten var mı? ---
     mevcut_film = db.query(FilmDB).filter(
         FilmDB.user_email == user['email'],
         FilmDB.tmdb_id == film.tmdb_id,
@@ -263,6 +277,7 @@ def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
 
     if mevcut_film:
         return {"mesaj": "Zaten ekli"}
+    # -----------------------------------------
 
     yeni_film = FilmDB(
         user_email=user['email'],
@@ -272,7 +287,7 @@ def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
         puan=film.puan, 
         poster=film.poster,
         izlendi="Hayır",
-        kisisel_puan=0, 
+        kisisel_puan=0,
         kisisel_yorum="" 
     )
     db.add(yeni_film)
@@ -294,11 +309,6 @@ def film_sil(film_id: int, request: Request, db: Session = Depends(get_db)):
     db.commit()
     return {"mesaj": "Silindi"}
 
-class DurumGuncelle(BaseModel):
-    izlendi: str = None
-    kisisel_puan: int = None
-    kisisel_yorum: str = None
-
 @app.put("/guncelle/{film_id}")
 def durum_guncelle(film_id: int, veri: DurumGuncelle, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
@@ -307,6 +317,7 @@ def durum_guncelle(film_id: int, veri: DurumGuncelle, request: Request, db: Sess
     if not film:
         raise HTTPException(status_code=404, detail="Film bulunamadı")
     
+    # Gelen verileri kontrol edip güncelle
     if veri.izlendi is not None:
         film.izlendi = veri.izlendi
     if veri.kisisel_puan is not None:
@@ -317,7 +328,7 @@ def durum_guncelle(film_id: int, veri: DurumGuncelle, request: Request, db: Sess
     db.commit()
     return {"mesaj": "Güncellendi"}
 
-
+# --- YENİ ÖNERİ ENDPOINT'İ ---
 @app.get("/oneriler")
 def get_recommendations(request: Request, db: Session = Depends(get_db)):
     user = request.session.get('user')
@@ -337,7 +348,7 @@ def get_recommendations(request: Request, db: Session = Depends(get_db)):
         res = requests.get(url).json()
         return {"baslik": "🔥 Popüler Filmler (Listen Boş)", "sonuc": veri_isle(res.get("results", []), "movie")}
 
-    # 4. Listeden RASTGELE bir film seç (Her seferinde farklı öneri gelsin)
+    # 4. Listeden RASTGELE bir film seç
     secilen_film = random.choice(kullanici_filmleri)
     
     # 5. TMDB'den o filme benzerleri iste
@@ -345,7 +356,7 @@ def get_recommendations(request: Request, db: Session = Depends(get_db)):
     url = f"{BASE_URL}/{endpoint_tur}/{secilen_film.tmdb_id}/recommendations?api_key={TMDB_API_KEY}&language=tr-TR"
     res = requests.get(url).json()
     
-    # Eğer öneri dönmezse (bazen dönmez), popülerleri getir
+    # Eğer öneri dönmezse, popülerleri getir
     if not res.get("results"):
         url = f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR"
         res = requests.get(url).json()
@@ -354,19 +365,3 @@ def get_recommendations(request: Request, db: Session = Depends(get_db)):
     # 6. Başarılıysa önerileri dön
     baslik = f"Çünkü '{secilen_film.ad}' izledin..."
     return {"baslik": baslik, "sonuc": veri_isle(res.get("results", []), endpoint_tur)}
-
-# Yardımcı Fonksiyon (TMDB verisini bizim formata çevirir)
-def veri_isle(results, tur_tipi):
-    icerikler = []
-    for item in results:
-        baslik = item.get("title") or item.get("name")
-        puan = item.get("vote_average", 0)
-        icerikler.append({
-            "tmdb_id": item["id"],
-            "ad": baslik,
-            "puan": puan,
-            "tur": "Dizi" if tur_tipi == "tv" else "Film",
-            "poster": f"https://image.tmdb.org/t/p/w500{item['poster_path']}" if item.get('poster_path') else None
-        })
-    return icerikler
- 
