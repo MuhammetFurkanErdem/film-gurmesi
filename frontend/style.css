@@ -758,10 +758,16 @@ textarea:focus {
         padding: 0;
     }
 
-    .modal-content {
+    .modal {
+        overflow-y: auto; 
+    }
+
+.modal-content {
         width: 95%;
-        margin: 20% auto;
+        margin: 15% auto;  
+        margin-bottom: 80px;  
         border-radius: 20px;
+        overflow: visible; 
     }
 }
 
