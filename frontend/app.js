@@ -18,38 +18,29 @@ async function kullaniciKontrol() {
     try {
         const res = await fetch(`${API_URL}/user_info`);
         const user = await res.json();
-        const loginBtn = document.getElementById("loginBtn");
-        const userProfile = document.getElementById("userProfile");
+        // ... (Eski kodlar aynı kalacak: loginBtn, userProfile işlemleri vs.) ...
 
         if (user) {
-            if(loginBtn) loginBtn.style.display = "none";
-            if(userProfile) {
-                userProfile.style.display = "block";
-                userProfile.innerHTML = `
-                    <div class="user-menu-container" onclick="menuyuAcKapat()">
-                        <img src="${user.picture}" class="user-avatar" alt="Profil">
-                        <div id="myDropdown" class="dropdown-content">
-                            <div style="padding: 10px; font-size: 0.8em; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                ${user.name}
-                            </div>
-                            <a href="profil.html"><i class="fas fa-user"></i> Profilim</a>
-                            <a href="#" onclick="cikisYap()"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
-                        </div>
-                    </div>`;
+            // ... (Profil resmi vs. işlemleri aynı) ...
+            
+            // --- YENİ EKLENEN KISIM BAŞLANGIÇ ---
+            // Eğer ana sayfadaysak (resultsContainer varsa) ÖNERİLERİ GETİR
+            if (document.getElementById("resultsContainer")) {
+                onerileriGetir();
             }
+            // --- YENİ EKLENEN KISIM BİTİŞ ---
+
             if (typeof listeyiGetir === "function" && document.getElementById("watchlistContainer")) {
                 listeyiGetir();
             }
         } else {
-            if(loginBtn) loginBtn.style.display = "inline-block";
-            if(userProfile) userProfile.style.display = "none";
+            // Kullanıcı yoksa da popülerleri gösterebiliriz
+            if (document.getElementById("resultsContainer")) {
+                onerileriGetir();
+            }
+            // ... (Eski kodlar aynı) ...
         }
     } catch (error) { console.error("Kullanıcı kontrolü hatası:", error); }
-}
-
-async function cikisYap() {
-    await fetch(`${API_URL}/auth/logout`);
-    window.location.reload();
 }
 
 // --- ARAMA İŞLEMLERİ ---

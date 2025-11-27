@@ -1,4 +1,5 @@
 import os
+import random
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -316,5 +317,56 @@ def durum_guncelle(film_id: int, veri: DurumGuncelle, request: Request, db: Sess
     db.commit()
     return {"mesaj": "Güncellendi"}
 
-    # Sürüm v2.0 - Render Guncelleme Kontrolü
+
+@app.get("/oneriler")
+def get_recommendations(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get('user')
+    
+    # 1. Kullanıcı giriş yapmamışsa -> Popüler Filmleri Getir
+    if not user:
+        url = f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR&page=1"
+        res = requests.get(url).json()
+        return {"baslik": "🔥 Popüler Filmler", "sonuc": veri_isle(res.get("results", []), "movie")}
+
+    # 2. Kullanıcının listesini çek
+    kullanici_filmleri = db.query(FilmDB).filter(FilmDB.user_email == user['email']).all()
+
+    # 3. Listesi boşsa -> Yine Popüler Filmleri Getir
+    if not kullanici_filmleri:
+        url = f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR&page=1"
+        res = requests.get(url).json()
+        return {"baslik": "🔥 Popüler Filmler (Listen Boş)", "sonuc": veri_isle(res.get("results", []), "movie")}
+
+    # 4. Listeden RASTGELE bir film seç (Her seferinde farklı öneri gelsin)
+    secilen_film = random.choice(kullanici_filmleri)
+    
+    # 5. TMDB'den o filme benzerleri iste
+    endpoint_tur = "movie" if secilen_film.tur == "movie" else "tv"
+    url = f"{BASE_URL}/{endpoint_tur}/{secilen_film.tmdb_id}/recommendations?api_key={TMDB_API_KEY}&language=tr-TR"
+    res = requests.get(url).json()
+    
+    # Eğer öneri dönmezse (bazen dönmez), popülerleri getir
+    if not res.get("results"):
+        url = f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR"
+        res = requests.get(url).json()
+        return {"baslik": "🔥 Popüler Filmler", "sonuc": veri_isle(res.get("results", []), "movie")}
+
+    # 6. Başarılıysa önerileri dön
+    baslik = f"Çünkü '{secilen_film.ad}' izledin..."
+    return {"baslik": baslik, "sonuc": veri_isle(res.get("results", []), endpoint_tur)}
+
+# Yardımcı Fonksiyon (TMDB verisini bizim formata çevirir)
+def veri_isle(results, tur_tipi):
+    icerikler = []
+    for item in results:
+        baslik = item.get("title") or item.get("name")
+        puan = item.get("vote_average", 0)
+        icerikler.append({
+            "tmdb_id": item["id"],
+            "ad": baslik,
+            "puan": puan,
+            "tur": "Dizi" if tur_tipi == "tv" else "Film",
+            "poster": f"https://image.tmdb.org/t/p/w500{item['poster_path']}" if item.get('poster_path') else None
+        })
+    return icerikler
  
