@@ -129,34 +129,18 @@ select:hover {
     box-shadow: 0 10px 30px rgba(233, 69, 96, 0.6); 
 }
 
-/* --- 4. ANA İÇERİK IZGARASI --- */
 .content-grid {
-    display: block; /* Izgara yerine blok yapıyoruz, tam genişlik olsun */
+    display: block; 
     width: 100%;
 }
 
-@media (max-width: 768px) {
-    .search-box {
-        flex-direction: column;
-        border-radius: 30px; /* Mobilde daha az yuvarlak */
-        padding: 20px;
-        gap: 15px;
-    }
-    input, select, .search-btn { width: 100%; text-align: center; }
-    input { background: rgba(0,0,0,0.2); } /* Mobilde input belli olsun */
-}
-
-/* --- 5. KART TASARIMI (FİLM KUTULARI) --- */
-/* --- KART IZGARASI (DÜZENLENDİ) --- */
 .cards-grid {
     display: grid;
-    /* 220px yerine 300px yaptık ki kartlar büyüsün ve satıra 3 tane sığsın */
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
     gap: 30px;
     align-items: start;
 }
 
-/* --- KART TASARIMI (DÜZENLENDİ) --- */
 .card {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 15px;
