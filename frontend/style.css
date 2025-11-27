@@ -651,91 +651,111 @@ textarea:focus {
     background: linear-gradient(45deg, #DD2476 0%, #FF512F 100%);
 }
 
-/* --- MOBİL UYUMLULUK VE DÜZENLEMELER (FİNAL DÜZELTME) --- */
+/* --- MOBİL GÖRÜNÜM DÜZELTMESİ (V3 - FİNAL) --- */
 @media (max-width: 768px) {
 
-    /* 1. Header ve Başlık */
+    /* 1. Header Düzeni */
     header {
         display: flex;
         flex-direction: column;
         align-items: center;
         margin-bottom: 20px;
-        padding-top: 10px;
     }
 
     header h1 {
-        font-size: 2em;
+        font-size: 2.2em;
         line-height: 1.2;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
 
-    /* 2. Buton Grubu (Üst Üste Binme Sorunu Çözüldü) */
+    /* 2. Buton Grubu (Giriş, Çıkış, Profil) */
     #authSection, header > div {
-        position: static;
-        transform: none;
+        position: static !important;
+        transform: none !important;
         width: 100%;
         display: flex;
-        flex-direction: column; /* Alt alta diz */
+        flex-direction: column;
         align-items: center;
-        gap: 15px; /* Butonlar arasına mesafe koy */
+        gap: 15px;
         margin-top: 10px;
     }
 
-    /* Butonları Genişlet ve Hizala */
+    /* Butonları daha şık "Hap" şeklinde yapalım */
     .auth-btn, .random-btn, .google-btn {
-        width: 85% !important; /* Genişlik */
-        max-width: 350px;
+        width: 90% !important; /* Kenarlardan biraz boşluk kalsın */
+        max-width: 400px;
         justify-content: center;
         margin: 0 !important;
-        height: 50px !important; /* Parmakla kolay tıklansın */
-        font-size: 1rem;
+        height: 55px !important; /* Mobilde parmakla basmak için ideal yükseklik */
+        font-size: 1.1rem;
+        border-radius: 50px !important; /* Tam yuvarlak kenarlar */
         
-        /* Masaüstü ayarlarını sıfırla (Kritik Nokta) */
-        position: static !important; 
+        /* Pozisyon sıfırlama */
+        position: static !important;
         top: 0 !important;
         transform: none !important;
     }
 
-    /* 3. Arama Kutusu (Siyahlık Daraltıldı) */
+    /* 3. Arama Alanı (O kaba siyahlığı kaldırıyoruz) */
     .search-box {
         flex-direction: column;
         width: 90%;
-        /* Padding'i azalttık (20px -> 10px) böylece siyah alan küçüldü */
-        padding: 10px; 
-        gap: 10px;
-        border-radius: 25px;
+        
+        /* ŞEFFAF YAPIYORUZ: O geniş siyah blok gidecek */
+        background: transparent !important; 
+        box-shadow: none !important;
+        border: none !important;
+        
+        padding: 0 !important; 
+        gap: 12px;
+        margin-bottom: 30px;
     }
     
-    input, select, .search-btn {
+    /* Input'un kendisini özelleştiriyoruz */
+    input {
+        width: 100%;
+        text-align: center;
+        font-size: 1.1rem;
+        height: 55px; 
+        
+        /* Kendi kutusu olsun */
+        background: rgba(22, 33, 62, 0.9) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        border-radius: 50px !important; /* Yuvarlak hatlar */
+        margin: 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    /* Select Kutuları ve Bul Butonu */
+    select, .search-btn {
         width: 100%;
         text-align: center;
         font-size: 1rem;
-        height: 45px; /* Eleman yükseklikleri eşitlendi */
+        height: 55px;
+        border-radius: 50px !important; /* Hepsi uyumlu olsun */
         margin: 0;
-    }
-
-    /* Mobilde input arka planını biraz daha belirgin yapalım */
-    input {
-        background: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     /* 4. Profil Menüsü */
     .dropdown-content {
         position: relative;
-        top: 5px;
+        top: 10px;
         width: 100%;
-        box-shadow: none;
-        background: rgba(0,0,0,0.2);
+        text-align: center;
+        background: rgba(255,255,255,0.05);
+        border: none;
     }
 
-    /* 5. Kartlar ve Modallar */
+    /* 5. Genel Kart Ayarları */
     .cards-grid, .dashboard-grid {
         grid-template-columns: 1fr;
-        padding: 0 5px;
+        padding: 0;
     }
 
     .modal-content {
         width: 95%;
         margin: 20% auto;
+        border-radius: 20px;
     }
 }
