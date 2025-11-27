@@ -184,15 +184,11 @@ select:hover {
     color: #ffffff;
     margin: 10px 0;
     text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    
-    /* 2 Satır Kuralı */
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 2; 
+    line-clamp: 2;          
     -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    min-height: 2.8em;
-    line-height: 1.4em;
 }
 
 /* Puan */

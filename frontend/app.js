@@ -63,7 +63,7 @@ async function cikisYap() {
     window.location.reload();
 }
 
-// --- ARAMA İŞLEMLERİ ---
+// --- ARAMA İŞLEMLERİ (GÜNCELLENMİŞ) ---
 async function filmAra() {
     const query = document.getElementById("searchInput").value;
     const sortType = document.getElementById("sortSelect").value;
@@ -72,6 +72,14 @@ async function filmAra() {
     if (!query) return bildirimGoster("⚠️ Lütfen bir isim yazın!", "hata");
 
     const container = document.getElementById("resultsContainer");
+    
+    // --- YENİ EKLENEN KISIM: BAŞLIĞI SIFIRLA ---
+    const baslikAlani = document.querySelector(".results-section h2");
+    if(baslikAlani) {
+        baslikAlani.innerText = "🔍 Arama Sonuçları";
+    }
+    // -------------------------------------------
+
     container.innerHTML = '<p style="color:white; width:100%; text-align:center;">Aranıyor...</p>';
 
     try {
@@ -391,7 +399,7 @@ async function onerileriGetir() {
     container.innerHTML = '<p style="color:#aaa; width:100%; text-align:center;">Sizin için seçiliyor...</p>';
 
     try {
-        const res = await fetch(`${API_URL}/oneriler`);
+        const res = await fetch(`${API_URL}/oneriler`, { cache: "no-store" });
         const data = await res.json();
         
         container.innerHTML = "";
