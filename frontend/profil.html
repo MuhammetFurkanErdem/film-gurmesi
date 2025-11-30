@@ -48,6 +48,29 @@
             </div>
         </div>
 
+        </div> 
+
+        <div class="friends-section">
+            <div class="add-friend-box">
+                <h3 style="margin:0;"><i class="fas fa-user-plus"></i> Arkadaş Ekle</h3>
+                <p style="color:#aaa; font-size:0.9em; margin-top:5px;">Arkadaşının Gmail adresini yazarak onu takip et.</p>
+                
+                <div class="friend-input-group">
+                    <input type="email" id="friendEmail" placeholder="ornek@gmail.com" style="margin:0;">
+                    <button onclick="arkadasEkle()" class="search-btn" style="margin:0; width:auto; padding:0 20px;">
+                        Takip Et
+                    </button>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom:20px; padding-left:10px; border-left:4px solid #e94560;">
+                📢 Arkadaşların Ne İzledi?
+            </h3>
+            <div id="friendFeedContainer">
+                <p style="color:#aaa; text-align:center; padding:20px;">Henüz bir hareket yok veya kimseyi takip etmiyorsun.</p>
+            </div>
+        </div>
+
         <div class="watchlist-section" style="max-width: 800px; margin: 0 auto;">
             <h2 style="text-align: center; margin-bottom: 30px;">📝 İzlenecekler Listem</h2>
             <div id="watchlistContainer" class="list-group">

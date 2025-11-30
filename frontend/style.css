@@ -751,4 +751,94 @@ textarea:focus {
     }
 }
 
-/* --- son güncelleme --- */
+/* --- ARKADAŞLIK SİSTEMİ --- */
+.friends-section {
+    max-width: 800px;
+    margin: 40px auto;
+    animation: fadeIn 0.5s ease;
+}
+
+.add-friend-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.friend-input-group {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 15px;
+}
+
+/* Arkadaş Aktivite Kartı (Feed) */
+.feed-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    gap: 15px;
+    border-left: 4px solid #e94560;
+    transition: transform 0.2s;
+}
+
+.feed-item:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.feed-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e94560;
+}
+
+.feed-content {
+    flex: 1;
+}
+
+.feed-header {
+    font-size: 0.95em;
+    color: #ccc;
+    margin-bottom: 8px;
+}
+
+.feed-header strong {
+    color: white;
+    font-weight: 700;
+}
+
+/* Feed İçindeki Film Kartı */
+.feed-movie-card {
+    display: flex;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 10px;
+    align-items: center;
+}
+
+.feed-poster {
+    width: 45px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.feed-comment {
+    font-style: italic;
+    color: #aaa;
+    font-size: 0.9em;
+    margin-top: 5px;
+    border-left: 2px solid rgba(255,255,255,0.2);
+    padding-left: 8px;
+}

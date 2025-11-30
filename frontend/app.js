@@ -43,14 +43,18 @@ async function kullaniciKontrol() {
                 onerileriGetir();
             }
 
+            // --- PROFIL SAYFASINDAYSA LİSTEYİ VE FEED'İ GETİR ---
             if (typeof listeyiGetir === "function" && document.getElementById("watchlistContainer")) {
                 listeyiGetir();
+                if(document.getElementById("friendFeedContainer")) {
+                    feedGetir();
+                }
             }
         } else {
             if(loginBtn) loginBtn.style.display = "inline-block";
             if(userProfile) userProfile.style.display = "none";
             
-            // KULLANICI YOKSA DA POPÜLERLERİ GETİR
+            // KULLANICI YOKSA DA POPÜLERLERİ GETİR (Ana Sayfa)
             if (document.getElementById("resultsContainer")) {
                 onerileriGetir();
             }
@@ -63,7 +67,68 @@ async function cikisYap() {
     window.location.reload();
 }
 
-// --- ARAMA İŞLEMLERİ (GÜNCELLENMİŞ) ---
+// --- ARKADAŞLIK SİSTEMİ FONKSİYONLARI ---
+
+async function arkadasEkle() {
+    const email = document.getElementById("friendEmail").value;
+    if(!email) return bildirimGoster("Lütfen bir e-posta adresi girin.", "hata");
+
+    try {
+        const res = await fetch(`${API_URL}/arkadas/ekle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ arkadas_email: email })
+        });
+        const data = await res.json();
+
+        if (data.durum === "basarili") {
+            bildirimGoster(data.mesaj);
+            document.getElementById("friendEmail").value = ""; // Kutuyu temizle
+            feedGetir(); // Akışı yenile
+        } else {
+            bildirimGoster(data.mesaj, "hata");
+        }
+    } catch (error) { console.error(error); bildirimGoster("Bir hata oluştu.", "hata"); }
+}
+
+async function feedGetir() {
+    const container = document.getElementById("friendFeedContainer");
+    if(!container) return;
+
+    try {
+        const res = await fetch(`${API_URL}/arkadas/akis`);
+        const data = await res.json();
+
+        if(!data.aktiviteler || data.aktiviteler.length === 0) {
+            container.innerHTML = "<p style='color:#aaa; text-align:center; padding:20px;'>Arkadaşların henüz bir şey izlemedi.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+        data.aktiviteler.forEach(act => {
+            const html = `
+                <div class="feed-item">
+                    <img src="${act.arkadas_foto}" class="feed-avatar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <div class="feed-content">
+                        <div class="feed-header">
+                            <strong>${act.arkadas_adi}</strong> bir filmi izledi:
+                        </div>
+                        <div class="feed-movie-card">
+                            <img src="${act.film_poster}" class="feed-poster">
+                            <div>
+                                <div style="font-weight:bold; color:#e94560; margin-bottom:3px;">${act.film_adi}</div>
+                                <div style="font-size:0.9em; color:#ffd700;">⭐ ${act.puan}/10</div>
+                                ${act.yorum ? `<div class="feed-comment">"${act.yorum}"</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            container.innerHTML += html;
+        });
+    } catch (error) { console.error("Feed hatası:", error); }
+}
+
+// --- ARAMA İŞLEMLERİ ---
 async function filmAra() {
     const query = document.getElementById("searchInput").value;
     const sortType = document.getElementById("sortSelect").value;
@@ -73,12 +138,9 @@ async function filmAra() {
 
     const container = document.getElementById("resultsContainer");
     
-    // --- YENİ EKLENEN KISIM: BAŞLIĞI SIFIRLA ---
+    // Başlığı Sıfırla
     const baslikAlani = document.querySelector(".results-section h2");
-    if(baslikAlani) {
-        baslikAlani.innerText = "🔍 Arama Sonuçları";
-    }
-    // -------------------------------------------
+    if(baslikAlani) baslikAlani.innerText = "🔍 Arama Sonuçları";
 
     container.innerHTML = '<p style="color:white; width:100%; text-align:center;">Aranıyor...</p>';
 
@@ -148,7 +210,7 @@ async function listeyiGetir() {
     } catch (error) { console.error("Liste hatası:", error); }
 }
 
-// --- YENİ TIKLAMA FONKSİYONU ---
+// --- KİŞİSEL KART AÇMA ---
 function listeElemaniTikla(id) {
     const film = tumFilmler.find(f => f.id === id);
     if (!film) return;
@@ -212,7 +274,7 @@ async function listeyeEkle(tmdb_id, tur, ad, puan, poster) {
         body: JSON.stringify({ tmdb_id, tur, ad, puan, poster })
     });
     
-    const data = await res.json(); // Mesajı al
+    const data = await res.json();
 
     if (res.ok) {
         if (data.mesaj === "Zaten ekli") {
@@ -286,7 +348,8 @@ async function durumGuncelleAPI(id, izlendi, puan, yorum) {
     if (res.ok) { 
         if(izlendi==="Evet") bildirimGoster("🎉 Kaydedildi!", "basarili");
         else bildirimGoster("Geri alındı.");
-        listeyiGetir(); 
+        listeyiGetir();
+        if(document.getElementById("friendFeedContainer")) feedGetir(); // Aktiviteyi de yenile
     }
 }
 
@@ -329,7 +392,6 @@ function modalKapat() {
     document.getElementById("modalVideo").innerHTML = "";
 }
 
-// --- DİĞER OLAYLAR ---
 function menuyuAcKapat() { document.getElementById("myDropdown").classList.toggle("show-menu"); }
 
 window.onclick = function(event) {
@@ -391,7 +453,7 @@ function rastgeleOner() {
     });
 }
 
-// --- ANA SAYFA ÖNERİLERİ (SAYFA YÜKLENİNCE ÇAĞRILIR) ---
+// --- ANA SAYFA ÖNERİLERİ (CACHE BUSTING ILE) ---
 async function onerileriGetir() {
     const container = document.getElementById("resultsContainer");
     const baslikAlani = document.querySelector(".results-section h2");
@@ -399,6 +461,7 @@ async function onerileriGetir() {
     container.innerHTML = '<p style="color:#aaa; width:100%; text-align:center;">Sizin için seçiliyor...</p>';
 
     try {
+        // Cache: no-store ile her seferinde taze veri al
         const res = await fetch(`${API_URL}/oneriler`, { cache: "no-store" });
         const data = await res.json();
         
