@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profilim - Film Gurmesi</title>
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=3.5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=2.0">
     <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -48,29 +48,6 @@
             </div>
         </div>
 
-        </div> 
-
-        <div class="friends-section">
-            <div class="add-friend-box">
-                <h3 style="margin:0;"><i class="fas fa-user-plus"></i> Arkadaş Ekle</h3>
-                <p style="color:#aaa; font-size:0.9em; margin-top:5px;">Arkadaşının Gmail adresini yazarak onu takip et.</p>
-                
-                <div class="friend-input-group">
-                    <input type="email" id="friendEmail" placeholder="ornek@gmail.com" style="margin:0;">
-                    <button onclick="arkadasEkle()" class="search-btn" style="margin:0; width:auto; padding:0 20px;">
-                        Takip Et
-                    </button>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom:20px; padding-left:10px; border-left:4px solid #e94560;">
-                📢 Arkadaşların Ne İzledi?
-            </h3>
-            <div id="friendFeedContainer">
-                <p style="color:#aaa; text-align:center; padding:20px;">Henüz bir hareket yok veya kimseyi takip etmiyorsun.</p>
-            </div>
-        </div>
-
         <div class="watchlist-section" style="max-width: 800px; margin: 0 auto;">
             <h2 style="text-align: center; margin-bottom: 30px;">📝 İzlenecekler Listem</h2>
             <div id="watchlistContainer" class="list-group">
@@ -86,11 +63,9 @@
     <div id="personalModal" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 25px;">
             <span class="close-btn" onclick="personalModalKapat()">&times;</span>
-            
             <div class="modal-info">
                 <h2 id="pTitle" style="color: #e94560; margin-bottom: 5px;">Film Başlığı</h2>
                 <p style="color: #aaa; font-size: 0.9em; margin-bottom: 25px;">İzleme Kartın</p>
-                
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
                     <div style="font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 1px;">Senin Puanın</div>
                     <div style="margin-top: 10px;">
@@ -98,7 +73,6 @@
                         <span style="font-size: 1.2em; color: #666; font-weight: bold;">/10</span>
                     </div>
                 </div>
-
                 <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border-left: 4px solid #e94560;">
                     <div style="font-size: 0.85em; color: #e94560; font-weight: bold; margin-bottom: 8px;">
                         <i class="fas fa-quote-left"></i> NOTLARIN
@@ -107,10 +81,7 @@
                         Henüz yorum yapmamışsın.
                     </p>
                 </div>
-
-                <button onclick="personalModalKapat()" class="search-btn" style="margin-top: 25px; width: 100%;">
-                    Tamam
-                </button>
+                <button onclick="personalModalKapat()" class="search-btn" style="margin-top: 25px; width: 100%;">Tamam</button>
             </div>
         </div>
     </div>
@@ -118,17 +89,13 @@
     <div id="ratingModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <span class="close-btn" onclick="ratingModalKapat()">&times;</span>
-            
             <div class="modal-info" style="text-align: center;">
                 <h2 style="color: #e94560;">🎬 Filmi Değerlendir</h2>
                 <p style="color: #ccc; margin-bottom: 20px;">Bu yapımı izledin! Nasıl buldun?</p>
-
                 <div class="rating-form">
                     <input type="hidden" id="ratingFilmId">
-                    
                     <label style="display: block; margin-bottom: 10px; color:#aaa;">Puanın:</label>
                     <input type="hidden" id="userRating" value="10">
-
                     <div class="star-rating-wrapper">
                         <div class="stars-container">
                             <i class="fas fa-star s-item active" data-value="1" onclick="yildizSec(1)"></i>
@@ -144,15 +111,10 @@
                         </div>
                         <div id="ratingText" class="rating-text-display">10 - Efsane</div>
                     </div>
-
                     <br>
-
                     <label style="display: block; margin-bottom: 10px;">Düşüncelerin (İsteğe bağlı)</label>
                     <textarea id="userReview" placeholder="Bu film hakkında ne düşünüyorsun?"></textarea>
-
-                    <button onclick="incelemeyiKaydet()" class="search-btn" style="width: 100%;">
-                        💾 Kaydet ve Bitir
-                    </button>
+                    <button onclick="incelemeyiKaydet()" class="search-btn" style="width: 100%;">💾 Kaydet ve Bitir</button>
                 </div>
             </div>
         </div>
@@ -161,27 +123,21 @@
     <div id="movieModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="modalKapat()">&times;</span>
-            
             <div class="video-container" id="modalVideo"></div>
-
             <div class="modal-info">
                 <h2 id="modalTitle">Film Başlığı</h2>
                 <p class="tagline" id="modalTagline">Slogan buraya</p>
-                
                 <div id="modalPlatforms" style="margin-bottom: 15px;"></div>
-
                 <div class="meta-data">
                     <span id="modalRating">⭐ 8.5</span>
                     <span id="modalRuntime">🕒 120 dk</span>
                     <a id="modalImdb" href="#" target="_blank" class="imdb-badge">IMDb</a>
                 </div>
-
                 <div style="margin: 15px 0; font-size: 0.9em; color: #ddd;">
                     <p><strong>🎭 Tür:</strong> <span id="modalGenres"></span></p>
                     <p><strong>🎬 Yönetmen:</strong> <span id="modalDirector"></span></p>
                     <p><strong>🌟 Oyuncular:</strong> <span id="modalCast"></span></p>
                 </div>
-
                 <p id="modalOverview" class="overview-text">Film özeti...</p>
             </div>
         </div>
@@ -190,12 +146,9 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('PWA Hazır:', reg.scope))
-                    .catch(err => console.log('PWA Hatası:', err));
+                navigator.serviceWorker.register('sw.js').then(reg => console.log('PWA Hazır:', reg.scope)).catch(err => console.log('PWA Hatası:', err));
             });
         }
     </script>
-
 </body>
 </html>

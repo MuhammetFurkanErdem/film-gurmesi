@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkadaşlarım - Film Gurmesi</title>
+    <link rel="stylesheet" href="style.css?v=3.5">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="manifest" href="manifest.json?v=2.0">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👥 Arkadaşlarım</h1>
+            <a href="index.html" class="auth-btn google-btn" style="margin-top: 20px;">
+                <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+            </a>
+        </header>
+
+        <div class="search-box" style="margin-bottom: 20px;">
+            <input type="text" id="userSearchInput" placeholder="Kullanıcı adı ara... (örn: furkan)">
+            <button onclick="kullaniciAra()" class="search-btn"><i class="fas fa-search"></i> Ara</button>
+        </div>
+
+        <div id="userSearchResults" class="friend-list-grid"></div>
+
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+
+        <div id="incomingRequestsSection" style="display:none; margin-bottom: 30px;">
+            <h2 style="text-align:center; color:#ffd700;">📩 Gelen İstekler</h2>
+            <div id="incomingRequestsList" class="friend-list-grid"></div>
+            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+        </div>
+
+        <h2 style="text-align:center; color:#e94560;">Takip Ettiklerin</h2>
+        <div id="myFriendsList" class="friend-list-grid">
+            <p style="text-align:center; color:#aaa; width:100%;">Yükleniyor...</p>
+        </div>
+
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+
+        <h2 style="text-align:center; color:#e94560; margin-bottom: 20px;">
+            📢 Arkadaşların Ne İzledi?
+        </h2>
+        
+        <div id="friendFeedContainer">
+            <p style="color:#aaa; text-align:center; padding:20px;">
+                Yükleniyor...
+            </p>
+        </div>
+
+    </div> <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="app.js?v=2.2"></script>
+    
+    <script>
+        // Sayfa açılınca gerekli fonksiyonları çalıştır
+        window.onload = function() {
+            kullaniciKontrol(); // Giriş kontrolü
+            arkadaslariListele();
+            istekleriListele();
+            feedGetir(); // Akışı da getir
+        };
+    </script>
+</body>
+</html>

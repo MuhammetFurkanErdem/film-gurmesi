@@ -1,5 +1,6 @@
 import os
 import random
+import string
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Request
@@ -10,7 +11,7 @@ from pydantic import BaseModel
 import requests
 from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
+from sqlalchemy.orm import sessionmaker, Session
 from authlib.integrations.starlette_client import OAuth
 from fastapi.staticfiles import StaticFiles
 
@@ -56,34 +57,32 @@ oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# --- VERİTABANI GÜNCELLEMESİ ---
+# --- VERİTABANI ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///./film_arsivi.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# 1. KULLANICI TABLOSU (YENİ)
 class UserDB(Base):
     __tablename__ = "kullanicilar"
     email = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
     name = Column(String)
     picture = Column(String)
     join_date = Column(DateTime, default=datetime.utcnow)
-    is_profile_public = Column(Boolean, default=True) # İleride gizlilik için
 
-# 2. ARKADAŞLIK TABLOSU (YENİ)
 class FriendshipDB(Base):
     __tablename__ = "arkadasliklar"
     id = Column(Integer, primary_key=True, index=True)
-    follower_email = Column(String, ForeignKey("kullanicilar.email")) # Takip Eden
-    followed_email = Column(String, ForeignKey("kullanicilar.email")) # Takip Edilen
+    follower_email = Column(String, ForeignKey("kullanicilar.email")) # İstek Gönderen
+    followed_email = Column(String, ForeignKey("kullanicilar.email")) # İstek Alan
+    status = Column(String, default="pending") # pending (bekliyor) veya accepted (kabul)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# 3. FİLM TABLOSU (GÜNCELLENDİ - User İlişkisi Eklenebilir ama şimdilik email yeterli)
 class FilmDB(Base):
     __tablename__ = "izlenecekler"
     id = Column(Integer, primary_key=True, index=True)
-    user_email = Column(String, ForeignKey("kullanicilar.email")) # İlişkilendirdik
+    user_email = Column(String, ForeignKey("kullanicilar.email"))
     tmdb_id = Column(Integer)
     tur = Column(String) 
     ad = Column(String)
@@ -92,7 +91,7 @@ class FilmDB(Base):
     izlendi = Column(String, default="Hayır")
     kisisel_puan = Column(Integer, default=0)
     kisisel_yorum = Column(String, default="")
-    eklenme_tarihi = Column(DateTime, default=datetime.utcnow) # Yeni: Ne zaman ekledi?
+    eklenme_tarihi = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
 
@@ -110,7 +109,11 @@ class DurumGuncelle(BaseModel):
     kisisel_yorum: str = None
 
 class ArkadasEkleModel(BaseModel):
-    arkadas_email: str
+    username: str
+
+class IstekYanitlaModel(BaseModel):
+    istek_id: int
+    durum: str # 'kabul' veya 'red'
 
 def get_db():
     db = SessionLocal()
@@ -124,6 +127,13 @@ def get_current_user(request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Oturum bulunamadı.")
     return user
+
+def generate_username(name):
+    base = name.lower().replace(" ", "")
+    tr_map = str.maketrans("çğıöşü", "cgiosu")
+    base = base.translate(tr_map)
+    suffix = ''.join(random.choices(string.digits, k=4))
+    return f"{base}{suffix}"
 
 def veri_isle(results, tur_tipi):
     icerikler = []
@@ -159,23 +169,19 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         user_info = token.get('userinfo')
         if user_info:
             request.session['user'] = dict(user_info)
-            
-            # --- KULLANICIYI VERİTABANINA KAYDET/GÜNCELLE ---
             db_user = db.query(UserDB).filter(UserDB.email == user_info['email']).first()
             if not db_user:
-                new_user = UserDB(
-                    email=user_info['email'],
-                    name=user_info['name'],
-                    picture=user_info['picture']
-                )
+                new_username = generate_username(user_info['name'])
+                while db.query(UserDB).filter(UserDB.username == new_username).first():
+                    new_username = generate_username(user_info['name'])
+                new_user = UserDB(email=user_info['email'], username=new_username, name=user_info['name'], picture=user_info['picture'])
                 db.add(new_user)
             else:
-                # Profil fotosu veya ismi değişmişse güncelle
                 db_user.name = user_info['name']
                 db_user.picture = user_info['picture']
+                if not db_user.username: db_user.username = generate_username(user_info['name'])
             db.commit()
-            # ------------------------------------------------
-
+            if db_user: request.session['user']['username'] = db_user.username
         return RedirectResponse(url="/uygulama/index.html")
     except Exception as e:
         return JSONResponse(content={"error": "Giriş Hatası", "detay": str(e)}, status_code=500)
@@ -186,78 +192,113 @@ async def logout(request: Request):
     return {"mesaj": "Çıkış yapıldı"}
 
 @app.get("/user_info")
-def user_info(request: Request):
-    return request.session.get('user')
+def user_info(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get('user')
+    if user:
+        db_user = db.query(UserDB).filter(UserDB.email == user['email']).first()
+        if db_user: return {"email": db_user.email, "name": db_user.name, "picture": db_user.picture, "username": db_user.username}
+    return None
 
-# --- ARKADAŞLIK SİSTEMİ ENDPOINTLERİ ---
+# --- ARKADAŞLIK SİSTEMİ (GÜNCELLENDİ) ---
 
-@app.post("/arkadas/ekle")
-def arkadas_ekle(veri: ArkadasEkleModel, request: Request, db: Session = Depends(get_db)):
+@app.get("/kullanici/ara/{query}")
+def kullanici_ara(query: str, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
+    sonuclar = db.query(UserDB).filter(UserDB.username.contains(query), UserDB.email != user['email']).limit(5).all()
+    return {"sonuclar": [{"username": u.username, "name": u.name, "picture": u.picture} for u in sonuclar]}
+
+@app.post("/arkadas/istek-gonder")
+def istek_gonder(veri: ArkadasEkleModel, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request)
+    arkadas = db.query(UserDB).filter(UserDB.username == veri.username).first()
     
-    # 1. Kendini ekleyemez
-    if user['email'] == veri.arkadas_email:
-        return {"durum": "hata", "mesaj": "Kendini ekleyemezsin."}
+    if not arkadas: return {"durum": "hata", "mesaj": "Kullanıcı bulunamadı."}
+    if user['email'] == arkadas.email: return {"durum": "hata", "mesaj": "Kendini ekleyemezsin."}
 
-    # 2. Arkadaş veritabanında var mı?
-    arkadas = db.query(UserDB).filter(UserDB.email == veri.arkadas_email).first()
-    if not arkadas:
-        return {"durum": "hata", "mesaj": "Bu e-posta adresine sahip bir kullanıcı bulunamadı."}
-
-    # 3. Zaten ekli mi?
+    # Zaten bir ilişki veya istek var mı?
     mevcut = db.query(FriendshipDB).filter(
-        FriendshipDB.follower_email == user['email'],
-        FriendshipDB.followed_email == veri.arkadas_email
+        ((FriendshipDB.follower_email == user['email']) & (FriendshipDB.followed_email == arkadas.email)) |
+        ((FriendshipDB.follower_email == arkadas.email) & (FriendshipDB.followed_email == user['email']))
     ).first()
     
     if mevcut:
-        return {"durum": "hata", "mesaj": "Zaten takip ediyorsun."}
+        if mevcut.status == "accepted": return {"durum": "hata", "mesaj": "Zaten arkadaşsınız."}
+        return {"durum": "hata", "mesaj": "Zaten bekleyen bir istek var."}
 
-    # 4. Ekle
-    yeni_arkadaslik = FriendshipDB(follower_email=user['email'], followed_email=veri.arkadas_email)
-    db.add(yeni_arkadaslik)
+    # İsteği oluştur (status='pending')
+    yeni_istek = FriendshipDB(follower_email=user['email'], followed_email=arkadas.email, status="pending")
+    db.add(yeni_istek)
     db.commit()
+    return {"durum": "basarili", "mesaj": f"@{arkadas.username} kullanıcısına istek gönderildi."}
+
+@app.get("/arkadas/gelen-istekler")
+def gelen_istekler(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request)
+    # Bana (followed_email) gelen ve durumu 'pending' olanlar
+    istekler = db.query(FriendshipDB, UserDB).join(UserDB, FriendshipDB.follower_email == UserDB.email)\
+        .filter(FriendshipDB.followed_email == user['email'], FriendshipDB.status == "pending").all()
     
-    return {"durum": "basarili", "mesaj": f"{arkadas.name} takip edildi!"}
+    return {"istekler": [{"id": f.id, "username": u.username, "name": u.name, "picture": u.picture} for f, u in istekler]}
+
+@app.post("/arkadas/yanitla")
+def istek_yanitla(veri: IstekYanitlaModel, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request)
+    istek = db.query(FriendshipDB).filter(FriendshipDB.id == veri.istek_id, FriendshipDB.followed_email == user['email']).first()
+    
+    if not istek: return {"durum": "hata", "mesaj": "İstek bulunamadı."}
+    
+    if veri.durum == "kabul":
+        istek.status = "accepted"
+        # KARŞILIKLI OLMASI İÇİN: Ters kaydı da oluşturuyoruz (Ben de onu takip ediyorum)
+        ters_kayit = FriendshipDB(follower_email=user['email'], followed_email=istek.follower_email, status="accepted")
+        db.add(ters_kayit)
+        db.commit()
+        return {"durum": "basarili", "mesaj": "Arkadaşlık kabul edildi!"}
+    else:
+        db.delete(istek)
+        db.commit()
+        return {"durum": "basarili", "mesaj": "İstek reddedildi."}
+
+@app.get("/arkadaslarim")
+def arkadaslari_getir(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request)
+    # Sadece KABUL EDİLMİŞ (accepted) olanları getir
+    arkadaslar = db.query(UserDB).join(FriendshipDB, UserDB.email == FriendshipDB.followed_email)\
+        .filter(FriendshipDB.follower_email == user['email'], FriendshipDB.status == "accepted").all()
+    return {"arkadaslar": [{"username": u.username, "name": u.name, "picture": u.picture} for u in arkadaslar]}
 
 @app.get("/arkadas/akis")
 def arkadas_aktiviteleri(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
+    # Sadece kabul edilmiş arkadaşları al
+    arkadaslar = db.query(FriendshipDB.followed_email).filter(FriendshipDB.follower_email == user['email'], FriendshipDB.status == "accepted").all()
+    arkadas_listesi = [t[0] for t in arkadaslar]
     
-    # 1. Takip ettiğim kişilerin e-postalarını bul
-    takip_ettiklerim = db.query(FriendshipDB.followed_email).filter(FriendshipDB.follower_email == user['email']).all()
-    takip_listesi = [t[0] for t in takip_ettiklerim]
-    
-    if not takip_listesi:
-        return {"aktiviteler": []}
+    if not arkadas_listesi: return {"aktiviteler": []}
 
-    # 2. Bu kişilerin izlediği ve yorum yaptığı filmleri getir (En son eklenen en üstte)
     aktiviteler = db.query(FilmDB, UserDB).join(UserDB, FilmDB.user_email == UserDB.email)\
-        .filter(FilmDB.user_email.in_(takip_listesi), FilmDB.izlendi == "Evet")\
+        .filter(FilmDB.user_email.in_(arkadas_listesi), FilmDB.izlendi == "Evet")\
         .order_by(FilmDB.eklenme_tarihi.desc()).limit(20).all()
         
-    sonuc = []
-    for film, arkadas in aktiviteler:
-        sonuc.append({
-            "arkadas_adi": arkadas.name,
-            "arkadas_foto": arkadas.picture,
-            "film_adi": film.ad,
-            "film_poster": film.poster,
-            "puan": film.kisisel_puan,
-            "yorum": film.kisisel_yorum
-        })
-        
-    return {"aktiviteler": sonuc}
+    return {"aktiviteler": [{
+        "arkadas_adi": u.name, 
+        "arkadas_username": u.username,
+        "arkadas_foto": u.picture, 
+        "film_adi": f.ad, 
+        "film_poster": f.poster, 
+        "puan": f.kisisel_puan, 
+        "yorum": f.kisisel_yorum
+    } for f, u in aktiviteler]}
 
-# ---------------------------------------
+# --- DİĞER ENDPOINTLER (Search, Detay, Ekle vb.) ---
+# (Buradan aşağısı öncekiyle aynı)
 
 @app.get("/search/{icerik_adi}")
 def search_content(icerik_adi: str, tur: str = "movie", sirala: str = "yok"):
     if not TMDB_API_KEY: return {"sonuc": []}
     endpoint = f"{BASE_URL}/search/{tur}"
     params = {"api_key": TMDB_API_KEY, "query": icerik_adi, "language": "tr-TR"}
-    try:
-        data = requests.get(endpoint, params=params).json()
+    try: data = requests.get(endpoint, params=params).json()
     except: return {"sonuc": []}
     if not data.get("results"): return {"sonuc": []}
     icerikler = veri_isle(data["results"], tur)
@@ -278,13 +319,11 @@ def film_detay(tmdb_id: int, tur: str = "movie"):
     yonetmen = "Bilinmiyor"
     if "credits" in data:
         for kisi in data["credits"].get("crew", []):
-            if kisi["job"] == "Director":
-                yonetmen = kisi["name"]; break
+            if kisi["job"] == "Director": yonetmen = kisi["name"]; break
         if tur == "tv" and data.get("created_by"): yonetmen = data["created_by"][0]["name"]
 
     oyuncular = [o["name"] for o in data["credits"].get("cast", [])[:5]]
     turler = [t["name"] for t in data.get("genres", [])]
-    
     video_key = None
     if "videos" in data and "results" in data["videos"]:
         for video in data["videos"]["results"]:
@@ -294,25 +333,15 @@ def film_detay(tmdb_id: int, tur: str = "movie"):
     if "watch/providers" in data and "results" in data["watch/providers"]:
         tr_data = data["watch/providers"]["results"].get("TR")
         if tr_data and "flatrate" in tr_data:
-            for p in tr_data["flatrate"]:
-                platformlar.append({"ad": p["provider_name"], "logo": f"https://image.tmdb.org/t/p/original{p['logo_path']}"})
+            for p in tr_data["flatrate"]: platformlar.append({"ad": p["provider_name"], "logo": f"https://image.tmdb.org/t/p/original{p['logo_path']}"})
 
-    return {
-        "baslik": baslik, "ozet": data.get("overview"), "tagline": data.get("tagline"),
-        "sure": sure, "puan": data.get("vote_average"),
-        "poster": f"https://image.tmdb.org/t/p/w500{data['poster_path']}" if data.get('poster_path') else None,
-        "backdrop": f"https://image.tmdb.org/t/p/original{data['backdrop_path']}" if data.get('backdrop_path') else None,
-        "youtube_video": f"https://www.youtube.com/embed/{video_key}" if video_key else None,
-        "platformlar": platformlar, "yonetmen": yonetmen, "oyuncular": oyuncular, "turler": turler,
-        "imdb_id": data.get("external_ids", {}).get("imdb_id")
-    }
+    return {"baslik": baslik, "ozet": data.get("overview"), "tagline": data.get("tagline"), "sure": sure, "puan": data.get("vote_average"), "poster": f"https://image.tmdb.org/t/p/w500{data['poster_path']}" if data.get('poster_path') else None, "backdrop": f"https://image.tmdb.org/t/p/original{data['backdrop_path']}" if data.get('backdrop_path') else None, "youtube_video": f"https://www.youtube.com/embed/{video_key}" if video_key else None, "platformlar": platformlar, "yonetmen": yonetmen, "oyuncular": oyuncular, "turler": turler, "imdb_id": data.get("external_ids", {}).get("imdb_id")}
 
 @app.post("/ekle")
 def filme_ekle(film: FilmEkle, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
     mevcut = db.query(FilmDB).filter(FilmDB.user_email == user['email'], FilmDB.tmdb_id == film.tmdb_id, FilmDB.tur == film.tur).first()
     if mevcut: return {"mesaj": "Zaten ekli"}
-    
     yeni = FilmDB(user_email=user['email'], tmdb_id=film.tmdb_id, tur=film.tur, ad=film.ad, puan=film.puan, poster=film.poster, izlendi="Hayır")
     db.add(yeni); db.commit()
     return {"mesaj": "Eklendi"}
@@ -346,18 +375,93 @@ def get_recommendations(request: Request, db: Session = Depends(get_db)):
     if not user:
         res = requests.get(f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR").json()
         return {"baslik": "🔥 Popüler Filmler", "sonuc": veri_isle(res.get("results", []), "movie")}
-
     kullanici_filmleri = db.query(FilmDB).filter(FilmDB.user_email == user['email']).all()
     if not kullanici_filmleri:
         res = requests.get(f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR").json()
         return {"baslik": "🔥 Popüler Filmler (Listen Boş)", "sonuc": veri_isle(res.get("results", []), "movie")}
-
     secilen = random.choice(kullanici_filmleri)
     endpoint_tur = "movie" if secilen.tur == "movie" else "tv"
     res = requests.get(f"{BASE_URL}/{endpoint_tur}/{secilen.tmdb_id}/recommendations?api_key={TMDB_API_KEY}&language=tr-TR").json()
-    
     if not res.get("results"):
         res = requests.get(f"{BASE_URL}/movie/popular?api_key={TMDB_API_KEY}&language=tr-TR").json()
         return {"baslik": "🔥 Popüler Filmler", "sonuc": veri_isle(res.get("results", []), "movie")}
-
     return {"baslik": f"Çünkü '{secilen.ad}' izledin...", "sonuc": veri_isle(res.get("results", []), endpoint_tur)}
+
+# --- ARKADAŞ PROFİLİ VE UYUM HESAPLAMA ---
+@app.get("/kullanici-profil/{target_username}")
+def get_public_profile(target_username: str, request: Request, db: Session = Depends(get_db)):
+    current_user = request.session.get('user') # Sen
+    
+    # 1. Hedef kullanıcıyı bul
+    target_user_db = db.query(UserDB).filter(UserDB.username == target_username).first()
+    if not target_user_db:
+        return {"durum": "hata", "mesaj": "Kullanıcı bulunamadı"}
+
+    # 2. Hedefin filmlerini çek
+    target_films = db.query(FilmDB).filter(FilmDB.user_email == target_user_db.email).all()
+    
+    # 3. İstatistikler
+    izlenen_sayisi = len([f for f in target_films if f.izlendi == "Evet"])
+    izlenecek_sayisi = len(target_films) - izlenen_sayisi
+    
+    film_sayisi = len([f for f in target_films if f.izlendi == "Evet" and f.tur == "movie"])
+    dizi_sayisi = len([f for f in target_films if f.izlendi == "Evet" and f.tur == "tv"])
+    favori = "Henüz Yok"
+    if film_sayisi > dizi_sayisi: favori = "🎬 Filmci"
+    elif dizi_sayisi > film_sayisi: favori = "📺 Dizici"
+    elif izlenen_sayisi > 0: favori = "⚖️ Dengeli"
+
+    # 4. UYUM SKORU HESAPLAMA (MATCH)
+    match_score = 0
+    ortak_filmler = []
+    
+    if current_user:
+        # Senin filmlerini çek
+        my_films = db.query(FilmDB).filter(FilmDB.user_email == current_user['email']).all()
+        
+        # TMDB ID'lerine göre kümeler oluştur
+        my_ids = set([f.tmdb_id for f in my_films])
+        target_ids = set([f.tmdb_id for f in target_films])
+        
+        # Kesişim (Ortak olanlar)
+        common_ids = my_ids.intersection(target_ids)
+        
+        # Basit Jaccard Benzerliği (Ortak / Toplam Eşsiz) * 100
+        union_ids = my_ids.union(target_ids)
+        if len(union_ids) > 0:
+            match_score = int((len(common_ids) / len(union_ids)) * 100)
+            
+        # Ortak filmlerin isimlerini de alalım (Detay göstermek istersen)
+        ortak_filmler = len(common_ids)
+
+    # 5. Listeyi Hazırla
+    film_listesi = []
+    for f in target_films:
+        film_listesi.append({
+            "tmdb_id": f.tmdb_id,
+            "tur": f.tur,
+            "ad": f.ad,
+            "puan": f.puan,
+            "poster": f.poster,
+            "izlendi": f.izlendi,
+            "kisisel_puan": f.kisisel_puan,
+            "kisisel_yorum": f.kisisel_yorum
+        })
+
+    return {
+        "user": {
+            "name": target_user_db.name,
+            "picture": target_user_db.picture,
+            "username": target_user_db.username
+        },
+        "stats": {
+            "watched": izlenen_sayisi,
+            "pending": izlenecek_sayisi,
+            "type": favori
+        },
+        "match": {
+            "score": match_score,
+            "common_count": ortak_filmler
+        },
+        "list": film_listesi
+    }

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkadaş Profili</title>
+    <link rel="stylesheet" href="style.css?v=3.5">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="friendNameHeader">Yükleniyor...</h1>
+            
+            <a href="arkadaslar.html" class="auth-btn google-btn" style="margin-top: 10px;">
+                <i class="fas fa-arrow-left"></i> Arkadaşlara Dön
+            </a>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="dash-card" style="border-color: #e94560; background: rgba(233, 69, 96, 0.1);">
+                <div class="dash-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="dash-number" id="matchScore">%0</div>
+                <div class="dash-label">Sinema Uyumu</div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-icon"><i class="fas fa-check-double"></i></div>
+                <div class="dash-number" id="friendWatched">0</div>
+                <div class="dash-label">İzlediği</div>
+            </div>
+        
+            <div class="dash-card">
+                <div class="dash-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="dash-number" id="friendType" style="font-size: 1.5rem; line-height: 1.5;">-</div>
+                <div class="dash-label">Tarzı</div>
+            </div>
+        </div>
+
+        <div class="watchlist-section" style="max-width: 800px; margin: 0 auto;">
+            <h2 style="text-align: center; margin-bottom: 30px;">📂 Arşiv</h2>
+            <div id="friendWatchlistContainer" class="list-group">
+                <p style="text-align: center; color: #aaa;">Yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="readOnlyModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 25px;">
+            <span class="close-btn" onclick="document.getElementById('readOnlyModal').style.display='none'">&times;</span>
+            <div class="modal-info">
+                <h2 id="roTitle" style="color: #e94560;">Film</h2>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin: 20px 0;">
+                    <div style="font-size: 0.9em; color: #aaa;">PUANI</div>
+                    <div id="roScore" style="font-size: 2.5em; font-weight: 800; color: #ffd700;">-</div>
+                </div>
+                <p id="roReview" style="font-style: italic; color: #ddd; line-height: 1.5;">...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=4.0"></script>
+    <script>
+        // URL'den username parametresini al ve profili yükle
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const username = params.get('u');
+            if(username) loadPublicProfile(username);
+            else document.body.innerHTML = "<h2 style='text-align:center; color:white; margin-top:50px;'>Kullanıcı belirtilmedi.</h2>";
+        };
+    </script>
+</body>
+</html>

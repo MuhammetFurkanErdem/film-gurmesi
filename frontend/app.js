@@ -30,10 +30,11 @@ async function kullaniciKontrol() {
                         <img src="${user.picture}" class="user-avatar" alt="Profil">
                         <div id="myDropdown" class="dropdown-content">
                             <div style="padding: 10px; font-size: 0.8em; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                ${user.name}
+                                @${user.username || 'kullanici'} <br> 
+                                <small>${user.name}</small>
                             </div>
                             <a href="profil.html"><i class="fas fa-user"></i> Profilim</a>
-                            <a href="#" onclick="cikisYap()"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+                            <a href="arkadaslar.html"><i class="fas fa-users"></i> Arkadaşlarım</a> <a href="#" onclick="cikisYap()"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
                         </div>
                     </div>`;
             }
@@ -111,7 +112,9 @@ async function feedGetir() {
                     <img src="${act.arkadas_foto}" class="feed-avatar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                     <div class="feed-content">
                         <div class="feed-header">
-                            <strong>${act.arkadas_adi}</strong> bir filmi izledi:
+                            <strong onclick="window.location.href='public_profile.html?u=${act.arkadas_username}'" style="cursor:pointer; text-decoration:underline;">
+                            <strong>${act.arkadas_adi}
+                            </strong> bir filmi izledi:
                         </div>
                         <div class="feed-movie-card">
                             <img src="${act.film_poster}" class="feed-poster">
@@ -492,4 +495,226 @@ async function onerileriGetir() {
         console.error("Öneri hatası:", error);
         container.innerHTML = "<p style='text-align:center'>Şu an öneri sunulamıyor.</p>";
     }
+}
+
+/* --- ARKADAŞLIK SAYFASI FONKSİYONLARI --- */
+
+async function kullaniciAra() {
+    const query = document.getElementById("userSearchInput").value;
+    if (!query) return;
+
+    const container = document.getElementById("userSearchResults");
+    container.innerHTML = "Aranıyor...";
+
+    try {
+        const res = await fetch(`${API_URL}/kullanici/ara/${query}`);
+        const data = await res.json();
+        container.innerHTML = "";
+
+        if (data.sonuclar.length === 0) {
+            container.innerHTML = "<p style='text-align:center; width:100%'>Kullanıcı bulunamadı.</p>";
+            return;
+        }
+
+        data.sonuclar.forEach(user => {
+            container.innerHTML += `
+                <div class="friend-card">
+                    <img src="${user.picture}" alt="${user.name}">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold;">${user.name}</div>
+                        <div style="font-size:0.9em; color:#aaa;">@${user.username}</div>
+                    </div>
+                    <button onclick="istekGonder('${user.username}')" class="add-friend-btn">
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                </div>`;
+        });
+    } catch (e) { console.error(e); }
+}
+
+async function takipEt(username) {
+    try {
+        const res = await fetch(`${API_URL}/arkadas/ekle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: username })
+        });
+        const data = await res.json();
+        
+        if (data.durum === "basarili") {
+            bildirimGoster(data.mesaj);
+            arkadaslariListele(); // Listeyi yenile
+            document.getElementById("userSearchResults").innerHTML = ""; // Arama sonucunu temizle
+            document.getElementById("userSearchInput").value = "";
+        } else {
+            bildirimGoster(data.mesaj, "hata");
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function arkadaslariListele() {
+    const container = document.getElementById("myFriendsList");
+    if (!container) return;
+
+    try {
+        const res = await fetch(`${API_URL}/arkadaslarim`);
+        const data = await res.json();
+        
+        if (data.arkadaslar.length === 0) {
+            container.innerHTML = "<p style='text-align:center; width:100%'>Henüz kimseyi takip etmiyorsun.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+        data.arkadaslar.forEach(user => {
+            container.innerHTML += `
+                <div class="friend-card" onclick="window.location.href='public_profile.html?u=${user.username}'" style="cursor:pointer;">
+                    <img src="${user.picture}" alt="${user.name}">
+                    <div>
+                        <div style="font-weight:bold;">${user.name}</div>
+                        <div style="font-size:0.9em; color:#aaa;">@${user.username}</div>
+                    </div>
+                </div>`;
+        });
+    } catch (e) { console.error(e); }
+}
+
+/* --- YENİ ARKADAŞLIK FONKSİYONLARI --- */
+
+// İstek Gönder (Eski takipEt yerine bunu kullanacağız)
+async function istekGonder(username) {
+    try {
+        const res = await fetch(`${API_URL}/arkadas/istek-gonder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: username })
+        });
+        const data = await res.json();
+        
+        if (data.durum === "basarili") {
+            bildirimGoster(data.mesaj);
+            document.getElementById("userSearchResults").innerHTML = ""; 
+            document.getElementById("userSearchInput").value = "";
+        } else {
+            bildirimGoster(data.mesaj, "hata");
+        }
+    } catch (e) { console.error(e); }
+}
+
+// Gelen İstekleri Listele
+async function istekleriListele() {
+    const container = document.getElementById("incomingRequestsList");
+    const section = document.getElementById("incomingRequestsSection");
+    if (!container) return;
+
+    try {
+        const res = await fetch(`${API_URL}/arkadas/gelen-istekler`);
+        const data = await res.json();
+
+        if (data.istekler.length > 0) {
+            section.style.display = "block"; // İstek varsa kutuyu göster
+            container.innerHTML = "";
+            data.istekler.forEach(req => {
+                container.innerHTML += `
+                    <div class="friend-card" style="border-color:#ffd700;">
+                        <img src="${req.picture}" alt="${req.name}">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold;">${req.name}</div>
+                            <div style="font-size:0.9em; color:#aaa;">@${req.username}</div>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="istekYanitla(${req.id}, 'kabul')" class="add-friend-btn" style="background:#00b09b;"><i class="fas fa-check"></i></button>
+                            <button onclick="istekYanitla(${req.id}, 'red')" class="add-friend-btn" style="background:#e94560;"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>`;
+            });
+        } else {
+            section.style.display = "none";
+        }
+    } catch (e) { console.error(e); }
+}
+
+// İsteği Kabul/Red Et
+async function istekYanitla(id, durum) {
+    try {
+        const res = await fetch(`${API_URL}/arkadas/yanitla`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ istek_id: id, durum: durum })
+        });
+        const data = await res.json();
+        
+        bildirimGoster(data.mesaj, durum === 'kabul' ? 'basarili' : 'hata');
+        istekleriListele(); // Listeyi yenile
+        arkadaslariListele(); // Arkadaş listesini de yenile (Kabul edildiyse)
+    } catch (e) { console.error(e); }
+}
+
+/* --- ARKADAŞ PROFİLİ (PUBLIC PROFILE) --- */
+
+async function loadPublicProfile(username) {
+    try {
+        const res = await fetch(`${API_URL}/kullanici-profil/${username}`);
+        const data = await res.json();
+
+        if (!data.user) {
+            document.body.innerHTML = "<h2 style='color:white; text-align:center;'>Kullanıcı bulunamadı.</h2>";
+            return;
+        }
+
+        // Başlık ve İstatistikler
+        document.getElementById("friendNameHeader").innerHTML = `
+            <img src="${data.user.picture}" style="width:50px; border-radius:50%; vertical-align:middle; margin-right:10px;">
+            ${data.user.name}
+        `;
+        document.getElementById("friendWatched").innerText = data.stats.watched;
+        document.getElementById("friendType").innerText = data.stats.type; // innerHTML yerine innerText kullandık, renkli span backend'den gelmiyorsa CSS ile halledilir.
+        
+        // Uyum Skoru Rengi
+        const score = data.match.score;
+        const scoreEl = document.getElementById("matchScore");
+        scoreEl.innerText = `%${score}`;
+        if(score > 70) scoreEl.style.color = "#00b09b"; // Yeşil
+        else if(score > 40) scoreEl.style.color = "#ffd700"; // Sarı
+        else scoreEl.style.color = "#e94560"; // Kırmızı
+
+        // Listeyi Dök
+        const container = document.getElementById("friendWatchlistContainer");
+        container.innerHTML = "";
+        
+        if (data.list.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#aaa;'>Bu kullanıcının listesi boş.</p>";
+            return;
+        }
+
+        // İzlenenleri öne al
+        const sortedList = data.list.sort((a, b) => (a.izlendi === "Evet") - (b.izlendi === "Evet"));
+
+        sortedList.forEach(film => {
+            const izlendiClass = film.izlendi === "Evet" ? "izlendi-ok" : "";
+            const puanHtml = film.kisisel_puan > 0 ? `<span style="color:#ffd700">(${film.kisisel_puan}/10)</span>` : "";
+            
+            // Tıklayınca Sadece Oku Modalı açılır
+            const html = `
+                <div class="list-item ${izlendiClass}" onclick="openReadOnly('${film.ad}', '${film.kisisel_puan}', '${film.kisisel_yorum || ''}')" style="cursor:pointer;">
+                    <div style="flex:1;">
+                        <strong>${film.ad}</strong> ${puanHtml} <br>
+                        <small>⭐ ${film.puan.toFixed(1)} | ${film.tur === 'movie' ? 'Film' : 'Dizi'}</small>
+                    </div>
+                    ${film.izlendi === 'Evet' ? '<i class="fas fa-check" style="color:#00b09b;"></i>' : '<i class="fas fa-clock" style="color:#aaa;"></i>'}
+                </div>`;
+            container.innerHTML += html;
+        });
+
+    } catch (e) { console.error(e); }
+}
+
+function openReadOnly(ad, puan, yorum) {
+    // Sadece izlenenlerin detayı görünsün
+    if (puan == 0 && !yorum) return;
+
+    document.getElementById("readOnlyModal").style.display = "block";
+    document.getElementById("roTitle").innerText = ad;
+    document.getElementById("roScore").innerText = puan > 0 ? puan : "-";
+    document.getElementById("roReview").innerText = yorum || "Yorum yok.";
 }
